@@ -1,6 +1,6 @@
 A simple, distributed, flexible counter designed for rate limiting 
 
-```
+```java
     LimitUsageStorage storage = new RedisStorage("localhost");
     SpillwayFactory spillwayFactory = new SpillwayFactory(storage);
 
