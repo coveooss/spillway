@@ -1,4 +1,4 @@
-A simple, distributed, flexible counter designed for rate limiting 
+Sample usage
 
 ```java
     LimitUsageStorage storage = new RedisStorage("localhost");
