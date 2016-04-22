@@ -6,7 +6,6 @@ import java.time.Duration;
 
 import static com.google.common.truth.Truth.assertThat;
 
-
 public class LimitDefinitionTest {
 
   @Test

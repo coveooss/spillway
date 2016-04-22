@@ -13,8 +13,7 @@ public class LimitBuilder<T> {
   private Function<T, String> propertyExtractor;
   private Optional<LimitExceededCallback> limitExceededCallback = Optional.empty();
 
-  private LimitBuilder() {
-  }
+  private LimitBuilder() {}
 
   public LimitBuilder<T> to(int capacity) {
     this.limitCapacity = capacity;
@@ -32,7 +31,10 @@ public class LimitBuilder<T> {
   }
 
   public Limit<T> build() {
-    return new Limit<>(new LimitDefinition(limitName, limitCapacity, limitExpiration), propertyExtractor, limitExceededCallback);
+    return new Limit<>(
+        new LimitDefinition(limitName, limitCapacity, limitExpiration),
+        propertyExtractor,
+        limitExceededCallback);
   }
 
   public static LimitBuilder<String> of(String limitName) {
@@ -45,5 +47,4 @@ public class LimitBuilder<T> {
     limitBuilder.propertyExtractor = propertyExtractor;
     return limitBuilder;
   }
-
 }

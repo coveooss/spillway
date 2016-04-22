@@ -44,14 +44,23 @@ public class RedisStorage implements LimitUsageStorage {
   }
 
   @Override
-  public int incrementAndGetCounter(String resource, String limitName, String property, Duration expiration, Instant eventTimestamp) {
+  public int addAndGet(
+      String resource,
+      String limitName,
+      String property,
+      Duration expiration,
+      Instant eventTimestamp,
+      int incrementBy) {
     String bucketString = InstantUtils.truncate(eventTimestamp, expiration).toString();
-    String key = Stream.of(keyPrefix, resource, limitName, property, bucketString).map(RedisStorage::clean).collect(Collectors.joining(KEY_SEPARATOR));
+    String key =
+        Stream.of(keyPrefix, resource, limitName, property, bucketString)
+            .map(RedisStorage::clean)
+            .collect(Collectors.joining(KEY_SEPARATOR));
     Transaction transaction = jedis.multi();
-    Response<Long> incrResponse = transaction.incr(key);
+    Response<Long> incrResponse = transaction.incrBy(key, incrementBy);
     // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
     // useless keys. The actual expiration mechanism is handled by the bucketing done via truncate().
-    transaction.expire(key, (int) expiration.getSeconds()*2);
+    transaction.expire(key, (int) expiration.getSeconds() * 2);
     transaction.exec();
 
     return incrResponse.get().intValue();
@@ -67,7 +76,13 @@ public class RedisStorage implements LimitUsageStorage {
 
       String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
 
-      counters.put(new LimitKey(keyComponents[1], keyComponents[2], keyComponents[3], Instant.parse(keyComponents[4])), value);
+      counters.put(
+          new LimitKey(
+              keyComponents[1],
+              keyComponents[2],
+              keyComponents[3],
+              Instant.parse(keyComponents[4])),
+          value);
     }
 
     return counters;

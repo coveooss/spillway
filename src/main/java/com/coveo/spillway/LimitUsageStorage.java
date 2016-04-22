@@ -6,7 +6,22 @@ import java.util.Map;
 
 public interface LimitUsageStorage {
 
-  int incrementAndGetCounter(String resource, String limitName, String property, Duration expiration, Instant eventTimestamp);
+  default int incrementAndGet(
+      String resource,
+      String limitName,
+      String property,
+      Duration expiration,
+      Instant eventTimestamp) {
+    return addAndGet(resource, limitName, property, expiration, eventTimestamp, 1);
+  }
+
+  int addAndGet(
+      String resource,
+      String limitName,
+      String property,
+      Duration expiration,
+      Instant eventTimestamp,
+      int incrementBy);
 
   Map<LimitKey, Integer> debugCurrentLimitCounters();
 }

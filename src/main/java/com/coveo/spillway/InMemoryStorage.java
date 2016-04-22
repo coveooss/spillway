@@ -13,23 +13,32 @@ public class InMemoryStorage implements LimitUsageStorage {
   private Object lock = new Object();
 
   @Override
-  public int incrementAndGetCounter(String resource, String limitName, String property, Duration expiration, Instant eventTimestamp) {
+  public int addAndGet(
+      String resource,
+      String limitName,
+      String property,
+      Duration expiration,
+      Instant eventTimestamp,
+      int incrementBy) {
     synchronized (lock) {
       Instant bucketInstant = InstantUtils.truncate(eventTimestamp, expiration);
 
       AtomicInteger newCounter = new AtomicInteger(0);
-      AtomicInteger counter = map.putIfAbsent(new LimitKey(resource, limitName, property, bucketInstant), newCounter);
+      AtomicInteger counter =
+          map.putIfAbsent(new LimitKey(resource, limitName, property, bucketInstant), newCounter);
       if (counter == null) {
         // This is the first time we see this key. We need to increment the new counter
         // we just inserted.
         counter = newCounter;
       }
-      return counter.incrementAndGet();
+      return counter.addAndGet(incrementBy);
     }
   }
 
   @Override
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return map.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue().get()));
+    return map.entrySet()
+        .stream()
+        .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue().get()));
   }
 }

@@ -2,8 +2,7 @@ package com.coveo.spillway;
 
 @FunctionalInterface
 public interface LimitExceededCallback {
-  LimitExceededCallback DO_NOTHING = (limitDefinition, context) -> {
-  };
+  LimitExceededCallback DO_NOTHING = (limitDefinition, context) -> {};
 
   void handleExceededLimit(LimitDefinition definition, Object context);
 

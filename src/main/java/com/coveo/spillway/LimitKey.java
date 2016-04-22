@@ -61,7 +61,6 @@ public class LimitKey {
     if (property != null ? !property.equals(limitKey.property) : limitKey.property != null)
       return false;
     return bucket != null ? bucket.equals(limitKey.bucket) : limitKey.bucket == null;
-
   }
 
   @Override
@@ -75,12 +74,18 @@ public class LimitKey {
 
   @Override
   public String toString() {
-    return "LimitKey{" +
-            "resource='" + resource + '\'' +
-            ", limitName='" + limitName + '\'' +
-            ", property='" + property + '\'' +
-            ", bucket=" + bucket +
-            '}';
+    return "LimitKey{"
+        + "resource='"
+        + resource
+        + '\''
+        + ", limitName='"
+        + limitName
+        + '\''
+        + ", property='"
+        + property
+        + '\''
+        + ", bucket="
+        + bucket
+        + '}';
   }
-
 }

@@ -1,6 +1,7 @@
 package com.coveo.spillway;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -10,10 +11,10 @@ public class SpillwayLimitExceededException extends SpillwayException {
   private Object context;
 
   public SpillwayLimitExceededException(LimitDefinition limitDefinition, Object context) {
-    super("Limits " + limitDefinition + " exceeded.");
-    exceededLimits.add(limitDefinition);
-    this.context = context;
+    this(Arrays.asList(limitDefinition), context);
   }
+
+  
 
   public SpillwayLimitExceededException(List<LimitDefinition> limitDefinitions, Object context) {
     super("Limits " + limitDefinitions + " exceeded.");

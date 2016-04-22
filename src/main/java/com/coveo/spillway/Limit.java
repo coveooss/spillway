@@ -11,7 +11,10 @@ public class Limit<T> {
 
   private Optional<LimitExceededCallback> limitExceededCallback;
 
-  /*package*/Limit(LimitDefinition definition, Function<T, String> propertyExtractor, Optional<LimitExceededCallback> limitExceededCallback) {
+  /*package*/ Limit(
+      LimitDefinition definition,
+      Function<T, String> propertyExtractor,
+      Optional<LimitExceededCallback> limitExceededCallback) {
     this.definition = definition;
     this.propertyExtractor = propertyExtractor;
     this.limitExceededCallback = limitExceededCallback;
