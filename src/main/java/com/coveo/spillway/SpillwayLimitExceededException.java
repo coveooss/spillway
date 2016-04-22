@@ -10,14 +10,14 @@ public class SpillwayLimitExceededException extends SpillwayException {
   private List<LimitDefinition> exceededLimits = new ArrayList<>();
   private Object context;
 
-  public SpillwayLimitExceededException(LimitDefinition limitDefinition, Object context) {
-    this(Arrays.asList(limitDefinition), context);
+  public SpillwayLimitExceededException(LimitDefinition limitDefinition, Object context, int cost) {
+    this(Arrays.asList(limitDefinition), context, cost);
   }
 
-  
-
-  public SpillwayLimitExceededException(List<LimitDefinition> limitDefinitions, Object context) {
-    super("Limits " + limitDefinitions + " exceeded.");
+  public SpillwayLimitExceededException(
+      List<LimitDefinition> limitDefinitions, Object context, int cost) {
+    super(
+        "Attempted to use " + cost + " units in limit " + limitDefinitions + " but it exceeds it.");
     exceededLimits.addAll(limitDefinitions);
     this.context = context;
   }

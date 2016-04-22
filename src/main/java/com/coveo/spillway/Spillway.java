@@ -23,6 +23,10 @@ public class Spillway<T> {
     this.limits = Arrays.asList(limits);
   }
 
+  public void call(T context) throws SpillwayLimitExceededException {
+    call(context, 1);
+  }
+
   public void call(T context, int cost) throws SpillwayLimitExceededException {
     List<LimitDefinition> exceededLimits = getExceededLimits(context, cost);
     if (!exceededLimits.isEmpty()) {
@@ -31,7 +35,11 @@ public class Spillway<T> {
   }
 
   public boolean tryCall(T context) {
-    return getExceededLimits(context).isEmpty();
+    return tryCall(context, 1);
+  }
+
+  public boolean tryCall(T context, int cost) {
+    return getExceededLimits(context, cost).isEmpty();
   }
 
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
@@ -41,18 +49,18 @@ public class Spillway<T> {
       Instant now = Instant.now();
 
       int limitValue =
-              storage.addAndGet(resource, limit.getName(), property, limit.getExpiration(), now, cost);
+          storage.addAndGet(resource, limit.getName(), property, limit.getExpiration(), now, cost);
 
       if (limitValue > limit.getCapacity()) {
         exceededLimits.add(limit.getDefinition());
         try {
           limit
-                  .getLimitExceededCallback()
-                  .orElse(LimitExceededCallback.doNothing())
-                  .handleExceededLimit(limit.getDefinition(), context);
+              .getLimitExceededCallback()
+              .orElse(LimitExceededCallback.doNothing())
+              .handleExceededLimit(limit.getDefinition(), context);
         } catch (RuntimeException ex) {
           logger.warn(
-                  "Limit exceeded callback for limit {} threw an exception. Ignoring.", limit, ex);
+              "Limit exceeded callback for limit {} threw an exception. Ignoring.", limit, ex);
         }
       }
     }

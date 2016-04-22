@@ -164,9 +164,6 @@ public class SpillwayTest {
     } catch (SpillwayLimitExceededException ex) {
       assertThat(ex.getExceededLimits()).hasSize(1);
       assertThat(ex.getExceededLimits().get(0)).isEqualTo(userLimit.getDefinition());
-      assertThat(ex.toString())
-          .isEqualTo(
-              "com.coveo.spillway.SpillwayLimitExceededException: Limits [perUser[1 calls/PT1H]] exceeded.");
       assertThat(ex.getContext()).isEqualTo(john);
     }
   }
@@ -188,9 +185,6 @@ public class SpillwayTest {
       assertThat(ex.getExceededLimits()).hasSize(2);
       assertThat(ex.getExceededLimits().get(0)).isEqualTo(userLimit.getDefinition());
       assertThat(ex.getExceededLimits().get(1)).isEqualTo(ipLimit.getDefinition());
-      assertThat(ex.toString())
-          .isEqualTo(
-              "com.coveo.spillway.SpillwayLimitExceededException: Limits [perUser[1 calls/PT1H], perIp[1 calls/PT1H]] exceeded.");
       assertThat(ex.getContext()).isEqualTo(john);
     }
   }
@@ -276,5 +270,30 @@ public class SpillwayTest {
     verify(callbackThatThrows).handleExceededLimit(ipLimit1.getDefinition(), john);
     verify(callbackThatIsOkay).handleExceededLimit(userLimit.getDefinition(), john);
     verify(callbackThatThrows).handleExceededLimit(ipLimit2.getDefinition(), john);
+  }
+
+  @Test
+  public void canExceedLimitByDoingALargeIncrement() {
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName).to(2).per(Duration.ofHours(1)).build();
+    Spillway<User> spillway = factory.enforce("testResource", userLimit);
+
+    try {
+      spillway.call(john, 3);
+      fail("Expected an exception");
+    } catch (SpillwayLimitExceededException e) {
+      assertThat(e.getExceededLimits()).hasSize(1);
+      assertThat(e.getExceededLimits().get(0)).isEqualTo(userLimit.getDefinition());
+    }
+  }
+
+  @Test
+  public void canIncrementByALargeNumber() {
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName).to(4).per(Duration.ofHours(1)).build();
+    Spillway<User> spillway = factory.enforce("testResource", userLimit);
+
+    assertThat(spillway.tryCall(john, 4)).isTrue();
+    assertThat(spillway.tryCall(john, 1)).isFalse();
   }
 }

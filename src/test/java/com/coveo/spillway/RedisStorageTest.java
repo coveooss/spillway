@@ -76,13 +76,13 @@ public class RedisStorageTest {
   @Test
   public void keysCanExpire() throws InterruptedException {
     int result1 =
-            storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
     assertThat(result1).isEqualTo(1);
 
     Thread.sleep(2000);
 
     int result2 =
-            storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
     assertThat(result2).isEqualTo(1);
   }
 
@@ -97,7 +97,7 @@ public class RedisStorageTest {
       assertThat(limitCounter.getKey().getResource()).isEqualTo(RESOURCE1);
       assertThat(limitCounter.getKey().getProperty()).startsWith(PROPERTY1);
       assertThat(limitCounter.getKey().getBucket())
-              .isGreaterThan(Instant.now().minus(EXPIRATION).minus(EXPIRATION));
+          .isGreaterThan(Instant.now().minus(EXPIRATION).minus(EXPIRATION));
       assertThat(limitCounter.getKey().getBucket()).isLessThan(Instant.now());
       assertThat(limitCounter.getValue()).isEqualTo(1);
     }
@@ -106,7 +106,7 @@ public class RedisStorageTest {
   @Test
   public void expiredKeysCompletelyDisappear() throws InterruptedException {
     int result1 =
-            storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
 
     assertThat(result1).isEqualTo(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
