@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Spillway<T> {
 
@@ -17,10 +19,11 @@ public class Spillway<T> {
   private final String resource;
   private final List<Limit<T>> limits;
 
+  @SafeVarargs
   public Spillway(LimitUsageStorage storage, String resourceName, Limit<T>... limits) {
     this.storage = storage;
     this.resource = resourceName;
-    this.limits = Arrays.asList(limits);
+    this.limits = Collections.unmodifiableList(Arrays.asList(limits));
   }
 
   public void call(T context) throws SpillwayLimitExceededException {
@@ -43,34 +46,60 @@ public class Spillway<T> {
   }
 
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
+    Instant now = Instant.now();
+    List<AddAndGetRequest> requests =
+        limits
+            .stream()
+            .map(
+                limit
+                    -> new AddAndGetRequest.Builder()
+                        .withResource(resource)
+                        .withLimitName(limit.getName())
+                        .withProperty(limit.getProperty(context))
+                        .withExpiration(limit.getExpiration())
+                        .withEventTimestamp(now)
+                        .withIncrementBy(cost)
+                        .build())
+            .collect(Collectors.toList());
+
+    List<Integer> results = storage.addAndGet(requests);
+
     List<LimitDefinition> exceededLimits = new ArrayList<>();
-    for (Limit<T> limit : limits) {
-      String property = limit.getProperty(context);
-      Instant now = Instant.now();
+    if (results.size() == limits.size()) {
+      for (int i = 0; i < results.size(); i++) {
+        int limitValue = results.get(i);
+        Limit<T> limit = limits.get(i);
 
-      int limitValue =
-          storage.addAndGet(resource, limit.getName(), property, limit.getExpiration(), now, cost);
-
-      if (limitValue > limit.getCapacity()) {
-        exceededLimits.add(limit.getDefinition());
-        try {
-          limit
-              .getLimitExceededCallback()
-              .orElse(LimitExceededCallback.doNothing())
-              .handleExceededLimit(limit.getDefinition(), context);
-        } catch (RuntimeException ex) {
-          logger.warn(
-              "Limit exceeded callback for limit {} threw an exception. Ignoring.", limit, ex);
+        if (limitValue > limit.getCapacity()) {
+          exceededLimits.add(limit.getDefinition());
+          try {
+            limit
+                .getLimitExceededCallback()
+                .orElse(LimitExceededCallback.doNothing())
+                .handleExceededLimit(limit.getDefinition(), context);
+          } catch (RuntimeException ex) {
+            logger.warn(
+                "Limit exceeded callback for limit {} threw an exception. Ignoring.", limit, ex);
+          }
         }
       }
+    } else {
+      logger.error(
+          "Something went very wrong. We sent {} limits to the backend but received {} responses. Assuming that no limits were exceeded. Limits: {}. Results: {}.",
+          limits.size(),
+          results.size(),
+          limits,
+          results);
     }
+
     return exceededLimits;
   }
 
   /**
    * This is a costly operation that should only be used for debugging.
    * Limits should always be enforced through the call and tryCall methods.
-   * @return
+   *
+   * @return Every limit and its current associated counter.
    */
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
     return storage.debugCurrentLimitCounters();

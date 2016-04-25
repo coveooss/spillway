@@ -27,16 +27,16 @@ public class SpillwayTest {
     private String name;
     private String ip;
 
-    public User(String name, String ip) {
+    User(String name, String ip) {
       this.name = name;
       this.ip = ip;
     }
 
-    public String getName() {
+    String getName() {
       return name;
     }
 
-    public String getIp() {
+    String getIp() {
       return ip;
     }
   }

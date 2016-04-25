@@ -3,17 +3,18 @@ package com.coveo.spillway;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
-import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
 
 public class RedisStorage implements LimitUsageStorage {
 
@@ -44,26 +45,36 @@ public class RedisStorage implements LimitUsageStorage {
   }
 
   @Override
-  public int addAndGet(
-      String resource,
-      String limitName,
-      String property,
-      Duration expiration,
-      Instant eventTimestamp,
-      int incrementBy) {
-    String bucketString = InstantUtils.truncate(eventTimestamp, expiration).toString();
-    String key =
-        Stream.of(keyPrefix, resource, limitName, property, bucketString)
-            .map(RedisStorage::clean)
-            .collect(Collectors.joining(KEY_SEPARATOR));
-    Transaction transaction = jedis.multi();
-    Response<Long> incrResponse = transaction.incrBy(key, incrementBy);
-    // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-    // useless keys. The actual expiration mechanism is handled by the bucketing done via truncate().
-    transaction.expire(key, (int) expiration.getSeconds() * 2);
-    transaction.exec();
+  public List<Integer> addAndGet(List<AddAndGetRequest> requests) {
+    Pipeline pipeline = jedis.pipelined();
 
-    return incrResponse.get().intValue();
+    List<Response<Long>> responses = new ArrayList<>();
+    for (AddAndGetRequest request : requests) {
+      pipeline.multi();
+      String bucketString =
+          InstantUtils.truncate(request.getEventTimestamp(), request.getExpiration()).toString();
+      String key =
+          Stream.of(
+                  keyPrefix,
+                  request.getResource(),
+                  request.getLimitName(),
+                  request.getProperty(),
+                  bucketString)
+              .map(RedisStorage::clean)
+              .collect(Collectors.joining(KEY_SEPARATOR));
+
+      responses.add(pipeline.incrBy(key, request.getIncrementBy()));
+      // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
+      // useless keys. The actual expiration mechanism is handled by the bucketing done via truncate().
+      pipeline.expire(key, (int) request.getExpiration().getSeconds() * 2);
+      pipeline.exec();
+    }
+
+    pipeline.sync();
+    return responses
+        .stream()
+        .map(response -> response.get().intValue())
+        .collect(Collectors.toList());
   }
 
   @Override

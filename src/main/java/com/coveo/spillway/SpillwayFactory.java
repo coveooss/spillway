@@ -7,7 +7,8 @@ public class SpillwayFactory {
     this.storage = storage;
   }
 
-  public <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
+  @SafeVarargs
+  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
     return new Spillway<>(storage, resource, limits);
   }
 }
