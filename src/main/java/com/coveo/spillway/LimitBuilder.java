@@ -1,7 +1,8 @@
 package com.coveo.spillway;
 
 import java.time.Duration;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 public class LimitBuilder<T> {
@@ -11,7 +12,7 @@ public class LimitBuilder<T> {
   private int limitCapacity;
 
   private Function<T, String> propertyExtractor;
-  private Optional<LimitExceededCallback> limitExceededCallback = Optional.empty();
+  private List<LimitTrigger> triggers = new ArrayList<>();
 
   private LimitBuilder() {}
 
@@ -25,8 +26,13 @@ public class LimitBuilder<T> {
     return this;
   }
 
-  public LimitBuilder<T> withExceededCallback(LimitExceededCallback limitExceededCallback) {
-    this.limitExceededCallback = Optional.of(limitExceededCallback);
+  public LimitBuilder<T> withLimitTrigger(LimitTrigger limitTrigger) {
+    this.triggers.add(limitTrigger);
+    return this;
+  }
+
+  public LimitBuilder<T> withExceededCallback(LimitTriggerCallback limitTriggerCallback) {
+    triggers.add(new LimitTrigger(limitCapacity, limitTriggerCallback));
     return this;
   }
 
@@ -34,7 +40,7 @@ public class LimitBuilder<T> {
     return new Limit<>(
         new LimitDefinition(limitName, limitCapacity, limitExpiration),
         propertyExtractor,
-        limitExceededCallback);
+        triggers);
   }
 
   public static LimitBuilder<String> of(String limitName) {

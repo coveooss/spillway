@@ -1,7 +1,7 @@
 package com.coveo.spillway;
 
 import java.time.Duration;
-import java.util.Optional;
+import java.util.List;
 import java.util.function.Function;
 
 public class Limit<T> {
@@ -9,23 +9,23 @@ public class Limit<T> {
   private LimitDefinition definition;
   private Function<T, String> propertyExtractor;
 
-  private Optional<LimitExceededCallback> limitExceededCallback;
+  private List<LimitTrigger> limitTriggers;
 
   /*package*/ Limit(
       LimitDefinition definition,
       Function<T, String> propertyExtractor,
-      Optional<LimitExceededCallback> limitExceededCallback) {
+      List<LimitTrigger> limitTriggers) {
     this.definition = definition;
     this.propertyExtractor = propertyExtractor;
-    this.limitExceededCallback = limitExceededCallback;
+    this.limitTriggers = limitTriggers;
   }
 
   public LimitDefinition getDefinition() {
     return definition;
   }
 
-  public Optional<LimitExceededCallback> getLimitExceededCallback() {
-    return limitExceededCallback;
+  public List<LimitTrigger> getLimitTriggers() {
+    return limitTriggers;
   }
 
   public String getProperty(T context) {

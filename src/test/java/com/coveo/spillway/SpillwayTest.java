@@ -16,6 +16,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class SpillwayTest {
@@ -135,7 +137,7 @@ public class SpillwayTest {
 
   @Test
   public void canBeNotifiedWhenLimitIsExceeded() {
-    LimitExceededCallback callback = mock(LimitExceededCallback.class);
+    LimitTriggerCallback callback = mock(LimitTriggerCallback.class);
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName)
             .to(1)
@@ -147,7 +149,7 @@ public class SpillwayTest {
     spillway.tryCall(john);
     spillway.tryCall(john);
 
-    verify(callback).handleExceededLimit(userLimit.getDefinition(), john);
+    verify(callback).trigger(userLimit.getDefinition(), john);
   }
 
   @Test
@@ -239,11 +241,11 @@ public class SpillwayTest {
   @Test
   public void ifCallbackThrowsWeIgnoreThatCallbackAndContinue()
       throws SpillwayLimitExceededException {
-    LimitExceededCallback callbackThatIsOkay = mock(LimitExceededCallback.class);
-    LimitExceededCallback callbackThatThrows = mock(LimitExceededCallback.class);
+    LimitTriggerCallback callbackThatIsOkay = mock(LimitTriggerCallback.class);
+    LimitTriggerCallback callbackThatThrows = mock(LimitTriggerCallback.class);
     doThrow(RuntimeException.class)
         .when(callbackThatThrows)
-        .handleExceededLimit(any(LimitDefinition.class), any(Object.class));
+        .trigger(any(LimitDefinition.class), any(Object.class));
     Limit<User> ipLimit1 =
         LimitBuilder.of("perIp1", User::getIp)
             .to(1)
@@ -267,9 +269,9 @@ public class SpillwayTest {
     spillway.tryCall(john);
     spillway.tryCall(john);
 
-    verify(callbackThatThrows).handleExceededLimit(ipLimit1.getDefinition(), john);
-    verify(callbackThatIsOkay).handleExceededLimit(userLimit.getDefinition(), john);
-    verify(callbackThatThrows).handleExceededLimit(ipLimit2.getDefinition(), john);
+    verify(callbackThatThrows).trigger(ipLimit1.getDefinition(), john);
+    verify(callbackThatIsOkay).trigger(userLimit.getDefinition(), john);
+    verify(callbackThatThrows).trigger(ipLimit2.getDefinition(), john);
   }
 
   @Test
@@ -295,5 +297,27 @@ public class SpillwayTest {
 
     assertThat(spillway.tryCall(john, 4)).isTrue();
     assertThat(spillway.tryCall(john, 1)).isFalse();
+  }
+
+  @Test
+  public void canAddLimitTriggers() {
+    LimitTriggerCallback callback = mock(LimitTriggerCallback.class);
+    LimitTrigger trigger = new LimitTrigger(5, callback);
+
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName)
+            .to(15)
+            .per(Duration.ofHours(1))
+            .withLimitTrigger(trigger)
+            .build();
+    Spillway<User> spillway = factory.enforce("testResource", userLimit);
+
+    spillway.tryCall(john, 5);
+    verify(callback, never()).trigger(userLimit.getDefinition(), john);
+    spillway.tryCall(john, 1);
+    verify(callback, times(1)).trigger(userLimit.getDefinition(), john);
+    // Calling it again does not lead to another alarm.
+    spillway.tryCall(john, 1);
+    verify(callback, times(1)).trigger(userLimit.getDefinition(), john);
   }
 }

@@ -67,20 +67,26 @@ public class Spillway<T> {
     List<LimitDefinition> exceededLimits = new ArrayList<>();
     if (results.size() == limits.size()) {
       for (int i = 0; i < results.size(); i++) {
-        int limitValue = results.get(i);
+        int currentValue = results.get(i);
         Limit<T> limit = limits.get(i);
 
-        if (limitValue > limit.getCapacity()) {
-          exceededLimits.add(limit.getDefinition());
-          try {
-            limit
-                .getLimitExceededCallback()
-                .orElse(LimitExceededCallback.doNothing())
-                .handleExceededLimit(limit.getDefinition(), context);
-          } catch (RuntimeException ex) {
-            logger.warn(
-                "Limit exceeded callback for limit {} threw an exception. Ignoring.", limit, ex);
+        // TODO - GSIMARD: Switch to trigger.test(limit) or something like that? Spillway might need to delegate stuff.
+        for (LimitTrigger trigger : limit.getLimitTriggers()) {
+          // Detect if the limit was busted by this call() invocation
+          // This can be detected if the new value is higher than the limit and the previous value is lower
+          // This is safe since the storage guarantees atomicity of operations
+          if (currentValue > trigger.getLimitValue()
+              && currentValue - cost <= trigger.getLimitValue()) {
+            try {
+              trigger.getCallback().trigger(limit.getDefinition(), context);
+            } catch (RuntimeException ex) {
+              logger.warn("Trigger callback for limit {} threw an exception. Ignoring.", limit, ex);
+            }
           }
+        }
+
+        if (currentValue > limit.getCapacity()) {
+          exceededLimits.add(limit.getDefinition());
         }
       }
     } else {
