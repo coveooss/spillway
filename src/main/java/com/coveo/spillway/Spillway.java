@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,41 +49,42 @@ public class Spillway<T> {
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
     Instant now = Instant.now();
     List<AddAndGetRequest> requests =
-            limits
-                    .stream()
-                    .map(
-                            limit
-                                    -> new AddAndGetRequest.Builder()
-                                    .withResource(resource)
-                                    .withLimitName(limit.getName())
-                                    .withProperty(limit.getProperty(context))
-                                    .withExpiration(limit.getExpiration())
-                                    .withEventTimestamp(now)
-                                    .withIncrementBy(cost)
-                                    .build())
-                    .collect(Collectors.toList());
+        limits
+            .stream()
+            .map(
+                limit
+                    -> new AddAndGetRequest.Builder()
+                        .withResource(resource)
+                        .withLimitName(limit.getName())
+                        .withProperty(limit.getProperty(context))
+                        .withExpiration(limit.getExpiration())
+                        .withEventTimestamp(now)
+                        .withIncrementBy(cost)
+                        .build())
+            .collect(Collectors.toList());
 
-    List<Integer> results = storage.addAndGet(requests);
+    Collection<Integer> results = storage.addAndGet(requests).values();
 
     List<LimitDefinition> exceededLimits = new ArrayList<>();
     if (results.size() == limits.size()) {
-      for (int i = 0; i < results.size(); i++) {
-        int currentValue = results.get(i);
+      int i = 0;
+      for (Integer result : results) {
         Limit<T> limit = limits.get(i);
 
-        handleTriggers(context, cost, currentValue, limit);
+        handleTriggers(context, cost, result, limit);
 
-        if (currentValue > limit.getCapacity()) {
+        if (result > limit.getCapacity()) {
           exceededLimits.add(limit.getDefinition());
         }
+        i++;
       }
     } else {
       logger.error(
-              "Something went very wrong. We sent {} limits to the backend but received {} responses. Assuming that no limits were exceeded. Limits: {}. Results: {}.",
-              limits.size(),
-              results.size(),
-              limits,
-              results);
+          "Something went very wrong. We sent {} limits to the backend but received {} responses. Assuming that no limits were exceeded. Limits: {}. Results: {}.",
+          limits.size(),
+          results.size(),
+          limits,
+          results);
     }
 
     return exceededLimits;
@@ -90,16 +92,11 @@ public class Spillway<T> {
 
   private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {
     for (LimitTrigger trigger : limit.getLimitTriggers()) {
-      // Detect if the limit was exceeded by this call() invocation
-      // This can be detected if the new value is higher than the limit and the previous value is lower
-      // This is possible since the storage guarantees atomicity of operations
-      if (currentValue > trigger.getLimitValue()
-              && currentValue - cost <= trigger.getLimitValue()) {
-        try {
-          trigger.getCallback().trigger(limit.getDefinition(), context);
-        } catch (RuntimeException ex) {
-          logger.warn("Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);
-        }
+      try {
+        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition());
+      } catch (RuntimeException ex) {
+        logger.warn(
+            "Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);
       }
     }
   }

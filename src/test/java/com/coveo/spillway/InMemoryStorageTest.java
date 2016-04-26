@@ -25,15 +25,26 @@ public class InMemoryStorageTest {
 
   @Test
   public void canAddLargeValues() {
-    int result = storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5);
+    int result =
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
     assertThat(result).isEqualTo(5);
   }
 
   @Test
   public void canAddLargeValuesToExisitingCounters() {
     storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
-    int result = storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5);
+    int result =
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
+  }
+
+  @Test
+  public void expiredEntriesAreRemovedFromDebugInfo() throws InterruptedException {
+    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
+    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
+    Thread.sleep(2000);
+    assertThat(storage.debugCurrentLimitCounters()).isEmpty();
   }
 }

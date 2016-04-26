@@ -61,14 +61,16 @@ public class RedisStorageTest {
 
   @Test
   public void canIncrement() {
-    int counter = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    int counter =
+        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
     assertThat(counter).isEqualTo(1);
   }
 
   @Test
   public void canIncrementMultipleTimes() {
     for (int i = 0; i < 10; i++) {
-      int result = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      int result =
+          storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
       assertThat(result).isEqualTo(i + 1);
     }
   }
@@ -76,13 +78,17 @@ public class RedisStorageTest {
   @Test
   public void keysCanExpire() throws InterruptedException {
     int result1 =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
     assertThat(result1).isEqualTo(1);
 
     Thread.sleep(2000);
 
     int result2 =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
     assertThat(result2).isEqualTo(1);
   }
 
@@ -106,7 +112,9 @@ public class RedisStorageTest {
   @Test
   public void expiredKeysCompletelyDisappear() throws InterruptedException {
     int result1 =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
 
     assertThat(result1).isEqualTo(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
@@ -118,14 +126,16 @@ public class RedisStorageTest {
 
   @Test
   public void canAddLargeValues() {
-    int result = storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5);
+    int result =
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
     assertThat(result).isEqualTo(5);
   }
 
   @Test
   public void canAddLargeValuesToExisitingCounters() {
     storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
-    int result = storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5);
+    int result =
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
   }

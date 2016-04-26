@@ -11,6 +11,8 @@ public class AddAndGetRequest {
   private Instant eventTimestamp;
   private int incrementBy;
 
+  private Instant bucket;
+
   public String getResource() {
     return resource;
   }
@@ -35,6 +37,10 @@ public class AddAndGetRequest {
     return incrementBy;
   }
 
+  public Instant getBucket() {
+    return bucket;
+  }
+
   private AddAndGetRequest(Builder builder) {
     resource = builder.resource;
     limitName = builder.limitName;
@@ -42,6 +48,8 @@ public class AddAndGetRequest {
     expiration = builder.expiration;
     eventTimestamp = builder.eventTimestamp;
     incrementBy = builder.incrementBy;
+    bucket = Instant.ofEpochMilli(
+            (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
   }
 
   public static final class Builder {
@@ -52,7 +60,8 @@ public class AddAndGetRequest {
     private Instant eventTimestamp;
     private int incrementBy = 1;
 
-    public Builder() {}
+    public Builder() {
+    }
 
     public Builder withResource(String val) {
       resource = val;

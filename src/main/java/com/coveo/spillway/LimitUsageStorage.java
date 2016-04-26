@@ -1,14 +1,16 @@
 package com.coveo.spillway;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 public interface LimitUsageStorage {
 
-  default int incrementAndGet(
+  default Pair<LimitKey, Integer> incrementAndGet(
       String resource,
       String limitName,
       String property,
@@ -17,7 +19,7 @@ public interface LimitUsageStorage {
     return addAndGet(resource, limitName, property, expiration, eventTimestamp, 1);
   }
 
-  default int addAndGet(
+  default Pair<LimitKey, Integer> addAndGet(
       String resource,
       String limitName,
       String property,
@@ -35,11 +37,13 @@ public interface LimitUsageStorage {
             .build());
   }
 
-  default int addAndGet(AddAndGetRequest request) {
-    return addAndGet(Arrays.asList(request)).get(0);
+  default Pair<LimitKey, Integer> addAndGet(AddAndGetRequest request) {
+    Map.Entry<LimitKey, Integer> value =
+        addAndGet(Arrays.asList(request)).entrySet().iterator().next();
+    return Pair.of(value.getKey(), value.getValue());
   }
 
-  List<Integer> addAndGet(List<AddAndGetRequest> requests);
+  Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests);
 
   Map<LimitKey, Integer> debugCurrentLimitCounters();
 }
