@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,7 @@ public class RedisStorage implements LimitUsageStorage {
   }
 
   @Override
-  public List<Integer> addAndGet(List<AddAndGetRequest> requests) {
+  public List<Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Pipeline pipeline = jedis.pipelined();
 
     List<Response<Long>> responses = new ArrayList<>();

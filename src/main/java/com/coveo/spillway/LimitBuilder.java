@@ -32,7 +32,7 @@ public class LimitBuilder<T> {
   }
 
   public LimitBuilder<T> withExceededCallback(LimitTriggerCallback limitTriggerCallback) {
-    triggers.add(new LimitTrigger(limitCapacity, limitTriggerCallback));
+    triggers.add(new ValueThresholdTrigger(limitCapacity, limitTriggerCallback));
     return this;
   }
 

@@ -2,6 +2,7 @@ package com.coveo.spillway;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,7 +15,7 @@ public class InMemoryStorage implements LimitUsageStorage {
   private Object lock = new Object();
 
   @Override
-  public List<Integer> addAndGet(List<AddAndGetRequest> requests) {
+  public List<Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     List<Integer> counters = new ArrayList<>();
     synchronized (lock) {
       for (AddAndGetRequest request : requests) {

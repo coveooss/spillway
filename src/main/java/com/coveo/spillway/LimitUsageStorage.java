@@ -3,6 +3,7 @@ package com.coveo.spillway;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public interface LimitUsageStorage {
     return addAndGet(Arrays.asList(request)).get(0);
   }
 
-  List<Integer> addAndGet(List<AddAndGetRequest> requests);
+  List<Integer> addAndGet(Collection<AddAndGetRequest> requests);
 
   Map<LimitKey, Integer> debugCurrentLimitCounters();
 }
