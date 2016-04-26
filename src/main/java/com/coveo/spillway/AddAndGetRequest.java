@@ -44,11 +44,6 @@ public class AddAndGetRequest {
     incrementBy = builder.incrementBy;
   }
 
-  public AddAndGetRequest withResource(String resource) {
-    this.resource = resource;
-    return this;
-  }
-
   public static final class Builder {
     private String resource;
     private String limitName;

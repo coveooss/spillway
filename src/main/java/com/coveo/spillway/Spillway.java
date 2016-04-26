@@ -48,19 +48,19 @@ public class Spillway<T> {
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
     Instant now = Instant.now();
     List<AddAndGetRequest> requests =
-        limits
-            .stream()
-            .map(
-                limit
-                    -> new AddAndGetRequest.Builder()
-                        .withResource(resource)
-                        .withLimitName(limit.getName())
-                        .withProperty(limit.getProperty(context))
-                        .withExpiration(limit.getExpiration())
-                        .withEventTimestamp(now)
-                        .withIncrementBy(cost)
-                        .build())
-            .collect(Collectors.toList());
+            limits
+                    .stream()
+                    .map(
+                            limit
+                                    -> new AddAndGetRequest.Builder()
+                                    .withResource(resource)
+                                    .withLimitName(limit.getName())
+                                    .withProperty(limit.getProperty(context))
+                                    .withExpiration(limit.getExpiration())
+                                    .withEventTimestamp(now)
+                                    .withIncrementBy(cost)
+                                    .build())
+                    .collect(Collectors.toList());
 
     List<Integer> results = storage.addAndGet(requests);
 
@@ -70,20 +70,7 @@ public class Spillway<T> {
         int currentValue = results.get(i);
         Limit<T> limit = limits.get(i);
 
-        // TODO - GSIMARD: Switch to trigger.test(limit) or something like that? Spillway might need to delegate stuff.
-        for (LimitTrigger trigger : limit.getLimitTriggers()) {
-          // Detect if the limit was busted by this call() invocation
-          // This can be detected if the new value is higher than the limit and the previous value is lower
-          // This is safe since the storage guarantees atomicity of operations
-          if (currentValue > trigger.getLimitValue()
-              && currentValue - cost <= trigger.getLimitValue()) {
-            try {
-              trigger.getCallback().trigger(limit.getDefinition(), context);
-            } catch (RuntimeException ex) {
-              logger.warn("Trigger callback for limit {} threw an exception. Ignoring.", limit, ex);
-            }
-          }
-        }
+        handleTriggers(context, cost, currentValue, limit);
 
         if (currentValue > limit.getCapacity()) {
           exceededLimits.add(limit.getDefinition());
@@ -91,14 +78,30 @@ public class Spillway<T> {
       }
     } else {
       logger.error(
-          "Something went very wrong. We sent {} limits to the backend but received {} responses. Assuming that no limits were exceeded. Limits: {}. Results: {}.",
-          limits.size(),
-          results.size(),
-          limits,
-          results);
+              "Something went very wrong. We sent {} limits to the backend but received {} responses. Assuming that no limits were exceeded. Limits: {}. Results: {}.",
+              limits.size(),
+              results.size(),
+              limits,
+              results);
     }
 
     return exceededLimits;
+  }
+
+  private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {
+    for (LimitTrigger trigger : limit.getLimitTriggers()) {
+      // Detect if the limit was exceeded by this call() invocation
+      // This can be detected if the new value is higher than the limit and the previous value is lower
+      // This is possible since the storage guarantees atomicity of operations
+      if (currentValue > trigger.getLimitValue()
+              && currentValue - cost <= trigger.getLimitValue()) {
+        try {
+          trigger.getCallback().trigger(limit.getDefinition(), context);
+        } catch (RuntimeException ex) {
+          logger.warn("Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);
+        }
+      }
+    }
   }
 
   /**

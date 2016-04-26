@@ -16,4 +16,11 @@ public class LimitTrigger {
     this.limitValue = limitValue;
     this.callback = callback;
   }
+
+  @Override
+  public String toString() {
+    return "LimitTrigger{" +
+            "limitValue=" + limitValue +
+            '}';
+  }
 }
