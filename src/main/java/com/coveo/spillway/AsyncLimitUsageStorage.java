@@ -53,9 +53,18 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
         LimitKey limitEntry = LimitKey.fromRequest(request);
         Instant expirationDate = request.getBucket().plus(request.getExpiration());
 
-        rawOverrides.merge(Pair.of(limitEntry, expirationDate), responses.get(limitEntry), Integer::sum);
+        rawOverrides.merge(
+            Pair.of(limitEntry, expirationDate), responses.get(limitEntry), Integer::sum);
       }
-      List<OverrideKeyRequest> overrides = rawOverrides.entrySet().stream().map(kvp -> new OverrideKeyRequest(kvp.getKey().getLeft(), kvp.getKey().getRight(), kvp.getValue())).collect(Collectors.toList());
+      List<OverrideKeyRequest> overrides =
+          rawOverrides
+              .entrySet()
+              .stream()
+              .map(
+                  kvp
+                      -> new OverrideKeyRequest(
+                          kvp.getKey().getLeft(), kvp.getKey().getRight(), kvp.getValue()))
+              .collect(Collectors.toList());
       cache.overrideKeys(overrides);
     } catch (RuntimeException ex) {
       logger.warn("Failed to send and cache requests.", ex);

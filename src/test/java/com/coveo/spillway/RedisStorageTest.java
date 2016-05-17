@@ -67,7 +67,7 @@ public class RedisStorageTest {
   @Test
   public void canIncrement() {
     int counter =
-            storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
+        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
     assertThat(counter).isEqualTo(1);
   }
 
@@ -75,7 +75,7 @@ public class RedisStorageTest {
   public void canIncrementMultipleTimes() {
     for (int i = 0; i < 10; i++) {
       int result =
-              storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
+          storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
       assertThat(result).isEqualTo(i + 1);
     }
   }
@@ -83,17 +83,17 @@ public class RedisStorageTest {
   @Test
   public void keysCanExpire() throws InterruptedException {
     int result1 =
-            storage
-                    .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
-                    .getValue();
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
     assertThat(result1).isEqualTo(1);
 
     Thread.sleep(2000);
 
     int result2 =
-            storage
-                    .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
-                    .getValue();
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
     assertThat(result2).isEqualTo(1);
   }
 
@@ -108,7 +108,7 @@ public class RedisStorageTest {
       assertThat(limitCounter.getKey().getResource()).isEqualTo(RESOURCE1);
       assertThat(limitCounter.getKey().getProperty()).startsWith(PROPERTY1);
       assertThat(limitCounter.getKey().getBucket())
-              .isGreaterThan(Instant.now().minus(EXPIRATION).minus(EXPIRATION));
+          .isGreaterThan(Instant.now().minus(EXPIRATION).minus(EXPIRATION));
       assertThat(limitCounter.getKey().getBucket()).isLessThan(Instant.now());
       assertThat(limitCounter.getValue()).isEqualTo(1);
     }
@@ -117,9 +117,9 @@ public class RedisStorageTest {
   @Test
   public void expiredKeysCompletelyDisappear() throws InterruptedException {
     int result1 =
-            storage
-                    .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
-                    .getValue();
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
 
     assertThat(result1).isEqualTo(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
@@ -132,7 +132,7 @@ public class RedisStorageTest {
   @Test
   public void canAddLargeValues() {
     int result =
-            storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
     assertThat(result).isEqualTo(5);
   }
 
@@ -140,7 +140,7 @@ public class RedisStorageTest {
   public void canAddLargeValuesToExisitingCounters() {
     storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     int result =
-            storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
   }
@@ -158,7 +158,11 @@ public class RedisStorageTest {
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
     logger.info("Last response: {}", lastResponse);
-    logger.info("AddAndGet {} times took {} (average of {} ms per call)", numberOfCalls, elapsedMs, (float) elapsedMs / (float) numberOfCalls);
+    logger.info(
+        "AddAndGet {} times took {} (average of {} ms per call)",
+        numberOfCalls,
+        elapsedMs,
+        (float) elapsedMs / (float) numberOfCalls);
   }
 
   @Test
@@ -169,12 +173,17 @@ public class RedisStorageTest {
     Pair<LimitKey, Integer> lastResponse = null;
     Stopwatch stopwatch = Stopwatch.createStarted();
     for (int i = 0; i < numberOfCalls; i++) {
-      lastResponse = asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      lastResponse =
+          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     }
     stopwatch.stop();
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
     logger.info("Last response: {}", lastResponse);
-    logger.info("AddAndGet {} times took {} (average of {} ms per call)", numberOfCalls, elapsedMs, (float) elapsedMs / (float) numberOfCalls);
+    logger.info(
+        "AddAndGet {} times took {} (average of {} ms per call)",
+        numberOfCalls,
+        elapsedMs,
+        (float) elapsedMs / (float) numberOfCalls);
   }
 }

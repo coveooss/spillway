@@ -29,9 +29,9 @@ public class InMemoryStorage implements LimitUsageStorage {
         LimitKey limitKey = LimitKey.fromRequest(request);
 
         Map<LimitKey, AtomicInteger> mapWithThisExpiration =
-                map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
+            map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
         AtomicInteger counter =
-                mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new AtomicInteger(0));
+            mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new AtomicInteger(0));
         updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
       }
       removeExpiredEntries();
@@ -43,15 +43,18 @@ public class InMemoryStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
     removeExpiredEntries();
     return map.values()
-            .stream()
-            .flatMap(m -> m.entrySet().stream())
-            .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+        .stream()
+        .flatMap(m -> m.entrySet().stream())
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
   }
 
   public void overrideKeys(List<OverrideKeyRequest> overrides) {
     synchronized (lock) {
       for (OverrideKeyRequest override : overrides) {
-        map.computeIfAbsent(override.getExpirationDate(), d -> new HashMap<>()).put(override.getLimitKey(), new AtomicInteger(override.getNewValue()));
+        Map<LimitKey, AtomicInteger> mapWithThisExpiration =
+            map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>());
+        mapWithThisExpiration.put(
+            override.getLimitKey(), new AtomicInteger(override.getNewValue()));
       }
     }
   }
@@ -59,10 +62,10 @@ public class InMemoryStorage implements LimitUsageStorage {
   private void removeExpiredEntries() {
     Instant now = Instant.now();
     Set<Instant> expiredDates =
-            map.keySet()
-                    .stream()
-                    .filter(expiration -> now.isAfter(expiration))
-                    .collect(Collectors.toSet());
+        map.keySet()
+            .stream()
+            .filter(expiration -> now.isAfter(expiration))
+            .collect(Collectors.toSet());
     map.keySet().removeAll(expiredDates);
   }
 }
