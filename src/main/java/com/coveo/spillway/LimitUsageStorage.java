@@ -25,7 +25,7 @@ public interface LimitUsageStorage {
       String property,
       Duration expiration,
       Instant eventTimestamp,
-      int incrementBy) {
+      int cost) {
     return addAndGet(
         new AddAndGetRequest.Builder()
             .withResource(resource)
@@ -33,7 +33,7 @@ public interface LimitUsageStorage {
             .withProperty(property)
             .withExpiration(expiration)
             .withEventTimestamp(eventTimestamp)
-            .withIncrementBy(incrementBy)
+            .withCost(cost)
             .build());
   }
 

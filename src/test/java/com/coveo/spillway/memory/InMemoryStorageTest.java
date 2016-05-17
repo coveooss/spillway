@@ -1,4 +1,4 @@
-package com.coveo.spillway;
+package com.coveo.spillway.memory;
 
 import org.junit.Before;
 import org.junit.Test;

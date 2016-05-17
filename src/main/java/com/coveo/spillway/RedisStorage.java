@@ -62,9 +62,9 @@ public class RedisStorage implements LimitUsageStorage {
               .map(RedisStorage::clean)
               .collect(Collectors.joining(KEY_SEPARATOR));
 
-      responses.put(limitKey, pipeline.incrBy(redisKey, request.getIncrementBy()));
+      responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
       // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-      // useless keys. The actual expiration mechanism is handled by the bucketing done via truncate().
+      // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
       pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
       pipeline.exec();
     }

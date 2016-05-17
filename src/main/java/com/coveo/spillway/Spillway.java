@@ -59,7 +59,7 @@ public class Spillway<T> {
                         .withProperty(limit.getProperty(context))
                         .withExpiration(limit.getExpiration())
                         .withEventTimestamp(now)
-                        .withIncrementBy(cost)
+                        .withCost(cost)
                         .build())
             .collect(Collectors.toList());
 

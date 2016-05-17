@@ -1,8 +1,13 @@
-package com.coveo.spillway;
+package com.coveo.spillway.memory;
+
+import com.coveo.spillway.AddAndGetRequest;
+import com.coveo.spillway.LimitKey;
+import com.coveo.spillway.LimitUsageStorage;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,7 +18,6 @@ public class InMemoryStorage implements LimitUsageStorage {
 
   Map<Instant, Map<LimitKey, AtomicInteger>> map = new ConcurrentHashMap<>();
   private Object lock = new Object();
-
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
@@ -28,7 +32,7 @@ public class InMemoryStorage implements LimitUsageStorage {
                 map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
         AtomicInteger counter =
                 mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new AtomicInteger(0));
-        updatedEntries.put(limitKey, counter.addAndGet(request.getIncrementBy()));
+        updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
       }
       removeExpiredEntries();
     }
@@ -42,6 +46,14 @@ public class InMemoryStorage implements LimitUsageStorage {
             .stream()
             .flatMap(m -> m.entrySet().stream())
             .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+  }
+
+  public void overrideKeys(List<OverrideKeyRequest> overrides) {
+    synchronized (lock) {
+      for (OverrideKeyRequest override : overrides) {
+        map.computeIfAbsent(override.getExpirationDate(), d -> new HashMap<>()).put(override.getLimitKey(), new AtomicInteger(override.getNewValue()));
+      }
+    }
   }
 
   private void removeExpiredEntries() {

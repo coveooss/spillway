@@ -1,5 +1,7 @@
 package com.coveo.spillway;
 
+import com.coveo.spillway.memory.InMemoryStorage;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +26,7 @@ public class AsyncLimitUsageStorageTest {
           .withProperty(PROPERTY)
           .withLimitName(LIMITNAME)
           .withEventTimestamp(INSTANT)
-          .withIncrementBy(1)
+          .withCost(1)
           .withExpiration(EXPIRATION)
           .build();
 

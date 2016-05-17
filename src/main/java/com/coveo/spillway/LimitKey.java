@@ -75,22 +75,22 @@ public class LimitKey {
   @Override
   public String toString() {
     return "LimitKey{"
-            + "resource='"
-            + resource
-            + '\''
-            + ", limitName='"
-            + limitName
-            + '\''
-            + ", property='"
-            + property
-            + '\''
-            + ", bucket="
-            + bucket
-            + '}';
+        + "resource='"
+        + resource
+        + '\''
+        + ", limitName='"
+        + limitName
+        + '\''
+        + ", property='"
+        + property
+        + '\''
+        + ", bucket="
+        + bucket
+        + '}';
   }
 
   public static LimitKey fromRequest(AddAndGetRequest request) {
     return new LimitKey(
-            request.getResource(), request.getLimitName(), request.getProperty(), request.getBucket());
+        request.getResource(), request.getLimitName(), request.getProperty(), request.getBucket());
   }
 }

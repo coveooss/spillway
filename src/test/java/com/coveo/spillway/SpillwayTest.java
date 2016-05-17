@@ -2,6 +2,8 @@ package com.coveo.spillway;
 
 import com.google.common.collect.ImmutableMap;
 
+import com.coveo.spillway.memory.InMemoryStorage;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -301,7 +303,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canIncrementByALargeNumber() {
+  public void costCanBeALargeNumber() {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(4).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
