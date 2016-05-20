@@ -56,6 +56,7 @@ public class InMemoryStorage implements LimitUsageStorage {
         mapWithThisExpiration.put(
             override.getLimitKey(), new AtomicInteger(override.getNewValue()));
       }
+      removeExpiredEntries();
     }
   }
 
