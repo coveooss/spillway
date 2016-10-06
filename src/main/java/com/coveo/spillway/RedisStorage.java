@@ -4,10 +4,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,36 +45,35 @@ public class RedisStorage implements LimitUsageStorage {
   }
 
   @Override
-  public List<Integer> addAndGet(Collection<AddAndGetRequest> requests) {
+  public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Pipeline pipeline = jedis.pipelined();
 
-    List<Response<Long>> responses = new ArrayList<>();
+    Map<LimitKey, Response<Long>> responses = new LinkedHashMap<>();
     for (AddAndGetRequest request : requests) {
       pipeline.multi();
-      String bucketString =
-          InstantUtils.truncate(request.getEventTimestamp(), request.getExpiration()).toString();
-      String key =
+      LimitKey limitKey = LimitKey.fromRequest(request);
+      String redisKey =
           Stream.of(
                   keyPrefix,
-                  request.getResource(),
-                  request.getLimitName(),
-                  request.getProperty(),
-                  bucketString)
+                  limitKey.getResource(),
+                  limitKey.getLimitName(),
+                  limitKey.getProperty(),
+                  limitKey.getBucket().toString())
               .map(RedisStorage::clean)
               .collect(Collectors.joining(KEY_SEPARATOR));
 
-      responses.add(pipeline.incrBy(key, request.getIncrementBy()));
+      responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
       // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-      // useless keys. The actual expiration mechanism is handled by the bucketing done via truncate().
-      pipeline.expire(key, (int) request.getExpiration().getSeconds() * 2);
+      // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
+      pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
       pipeline.exec();
     }
 
     pipeline.sync();
     return responses
+        .entrySet()
         .stream()
-        .map(response -> response.get().intValue())
-        .collect(Collectors.toList());
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get().intValue()));
   }
 
   @Override

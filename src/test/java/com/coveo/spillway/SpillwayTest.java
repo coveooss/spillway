@@ -1,10 +1,13 @@
 package com.coveo.spillway;
 
+import com.google.common.collect.ImmutableMap;
+
+import com.coveo.spillway.memory.InMemoryStorage;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -300,7 +303,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canIncrementByALargeNumber() {
+  public void costCanBeALargeNumber() {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(4).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -333,7 +336,10 @@ public class SpillwayTest {
 
   @Test
   public void triggersAreIgnoreIfTheStorageReturnsAnIncoherentResponse() {
-    when(mockedStorage.addAndGet(anyList())).thenReturn(Arrays.asList(1, 2, 3));
+    when(mockedStorage.addAndGet(anyList()))
+        .thenReturn(
+            ImmutableMap.of(
+                mock(LimitKey.class), 1, mock(LimitKey.class), 2, mock(LimitKey.class), 3));
 
     LimitTriggerCallback callback = mock(LimitTriggerCallback.class);
     ValueThresholdTrigger trigger = new ValueThresholdTrigger(5, callback);

@@ -88,4 +88,9 @@ public class LimitKey {
         + bucket
         + '}';
   }
+
+  public static LimitKey fromRequest(AddAndGetRequest request) {
+    return new LimitKey(
+        request.getResource(), request.getLimitName(), request.getProperty(), request.getBucket());
+  }
 }

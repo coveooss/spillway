@@ -1,8 +1,12 @@
 package com.coveo.spillway;
 
+import com.google.common.base.Stopwatch;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +15,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServer;
@@ -61,14 +66,16 @@ public class RedisStorageTest {
 
   @Test
   public void canIncrement() {
-    int counter = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    int counter =
+        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
     assertThat(counter).isEqualTo(1);
   }
 
   @Test
   public void canIncrementMultipleTimes() {
     for (int i = 0; i < 10; i++) {
-      int result = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      int result =
+          storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
       assertThat(result).isEqualTo(i + 1);
     }
   }
@@ -76,13 +83,17 @@ public class RedisStorageTest {
   @Test
   public void keysCanExpire() throws InterruptedException {
     int result1 =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
     assertThat(result1).isEqualTo(1);
 
     Thread.sleep(2000);
 
     int result2 =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
     assertThat(result2).isEqualTo(1);
   }
 
@@ -106,7 +117,9 @@ public class RedisStorageTest {
   @Test
   public void expiredKeysCompletelyDisappear() throws InterruptedException {
     int result1 =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP);
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
 
     assertThat(result1).isEqualTo(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
@@ -118,15 +131,59 @@ public class RedisStorageTest {
 
   @Test
   public void canAddLargeValues() {
-    int result = storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5);
+    int result =
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
     assertThat(result).isEqualTo(5);
   }
 
   @Test
   public void canAddLargeValuesToExisitingCounters() {
     storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
-    int result = storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5);
+    int result =
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
+  }
+
+  @Test
+  @Ignore("Manual test. Remove this to run it.")
+  public void syncPerformance() {
+    int numberOfCalls = 1000000;
+    Pair<LimitKey, Integer> lastResponse = null;
+    Stopwatch stopwatch = Stopwatch.createStarted();
+    for (int i = 0; i < numberOfCalls; i++) {
+      lastResponse = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    }
+    stopwatch.stop();
+    long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+
+    logger.info("Last response: {}", lastResponse);
+    logger.info(
+        "AddAndGet {} times took {} (average of {} ms per call)",
+        numberOfCalls,
+        elapsedMs,
+        (float) elapsedMs / (float) numberOfCalls);
+  }
+
+  @Test
+  @Ignore("Manual test. Remove this to run it.")
+  public void asyncPerformance() {
+    AsyncLimitUsageStorage asyncStorage = new AsyncLimitUsageStorage(storage);
+    int numberOfCalls = 1000000;
+    Pair<LimitKey, Integer> lastResponse = null;
+    Stopwatch stopwatch = Stopwatch.createStarted();
+    for (int i = 0; i < numberOfCalls; i++) {
+      lastResponse =
+          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    }
+    stopwatch.stop();
+    long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+
+    logger.info("Last response: {}", lastResponse);
+    logger.info(
+        "AddAndGet {} times took {} (average of {} ms per call)",
+        numberOfCalls,
+        elapsedMs,
+        (float) elapsedMs / (float) numberOfCalls);
   }
 }

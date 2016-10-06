@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -58,23 +59,24 @@ public class Spillway<T> {
                         .withProperty(limit.getProperty(context))
                         .withExpiration(limit.getExpiration())
                         .withEventTimestamp(now)
-                        .withIncrementBy(cost)
+                        .withCost(cost)
                         .build())
             .collect(Collectors.toList());
 
-    List<Integer> results = storage.addAndGet(requests);
+    Collection<Integer> results = storage.addAndGet(requests).values();
 
     List<LimitDefinition> exceededLimits = new ArrayList<>();
     if (results.size() == limits.size()) {
-      for (int i = 0; i < results.size(); i++) {
-        int currentValue = results.get(i);
+      int i = 0;
+      for (Integer result : results) {
         Limit<T> limit = limits.get(i);
 
-        handleTriggers(context, cost, currentValue, limit);
+        handleTriggers(context, cost, result, limit);
 
-        if (currentValue > limit.getCapacity()) {
+        if (result > limit.getCapacity()) {
           exceededLimits.add(limit.getDefinition());
         }
+        i++;
       }
     } else {
       logger.error(
