@@ -81,18 +81,16 @@ public class RedisStorageTest {
   }
 
   @Test
-  public void keysCanExpire() throws InterruptedException {
+  public void keysWithDifferentTimeStampGoInDifferentBuckets() {
     int result1 =
         storage
             .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
             .getValue();
     assertThat(result1).isEqualTo(1);
 
-    Thread.sleep(2000);
-
     int result2 =
         storage
-            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), Instant.now())
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP.plusSeconds(1))
             .getValue();
     assertThat(result2).isEqualTo(1);
   }
