@@ -24,6 +24,8 @@ package com.coveo.spillway;
 
 public abstract class SpillwayException extends Exception {
 
+  private static final long serialVersionUID = -8600370225577113762L;
+
   public SpillwayException(String message) {
     super(message);
   }
