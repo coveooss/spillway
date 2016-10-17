@@ -20,11 +20,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
+
+import com.coveo.spillway.trigger.LimitTrigger;
 
 /**
  * Contains all the the necessary information to enforce a limit

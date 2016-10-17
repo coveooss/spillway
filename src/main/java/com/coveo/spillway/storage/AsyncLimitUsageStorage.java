@@ -20,14 +20,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.storage;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coveo.spillway.memory.InMemoryStorage;
-import com.coveo.spillway.memory.OverrideKeyRequest;
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.limit.LimitUsageStorage;
 
 import java.time.Instant;
 import java.util.Collection;

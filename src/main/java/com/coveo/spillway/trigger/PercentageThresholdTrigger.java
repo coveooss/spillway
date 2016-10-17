@@ -20,7 +20,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.trigger;
+
+import com.coveo.spillway.limit.LimitDefinition;
 
 public class PercentageThresholdTrigger extends AbstractLimitTrigger {
 

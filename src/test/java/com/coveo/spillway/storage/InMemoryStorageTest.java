@@ -20,12 +20,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway.memory;
+package com.coveo.spillway.storage;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.coveo.spillway.memory.InMemoryStorage;
+import com.coveo.spillway.storage.InMemoryStorage;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -20,26 +20,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.trigger;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.coveo.spillway.limit.LimitDefinition;
+import com.coveo.spillway.trigger.LimitTriggerCallback;
+import com.coveo.spillway.trigger.PercentageThresholdTrigger;
 
 import java.time.Duration;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class ValueThresholdTriggerTest {
+public class PercentageThresholdTriggerTest {
+
   private LimitTriggerCallback callback;
   private LimitDefinition limitDef = new LimitDefinition("testLimit", 100, Duration.ofDays(1));
-  private ValueThresholdTrigger trigger;
+  private PercentageThresholdTrigger trigger;
 
   @Before
   public void setup() {
     callback = mock(LimitTriggerCallback.class);
     // Will trigger at 50% of the limit
-    trigger = new ValueThresholdTrigger(50, callback);
+    trigger = new PercentageThresholdTrigger(0.5, callback);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void negativeThresholdThrows() {
+    new PercentageThresholdTrigger(-1, callback);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void largerThanOneThresholdThrows() {
+    new PercentageThresholdTrigger(2, callback);
   }
 
   @Test

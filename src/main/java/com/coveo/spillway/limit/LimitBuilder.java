@@ -20,15 +20,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import com.coveo.spillway.trigger.LimitTrigger;
+import com.coveo.spillway.trigger.LimitTriggerCallback;
+import com.coveo.spillway.trigger.PercentageThresholdTrigger;
+import com.coveo.spillway.trigger.ValueThresholdTrigger;
+
 /**
- * Contains helper methods to easily create {@link com.coveo.spillway.Limit}
+ * Contains helper methods to easily create {@link com.coveo.spillway.limit.Limit}
  * Genereal usage is the following :
  * <pre>
  * {@code

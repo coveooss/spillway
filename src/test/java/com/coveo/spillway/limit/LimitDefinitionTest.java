@@ -20,17 +20,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
-public abstract class SpillwayException extends Exception {
+import org.junit.Test;
 
-  private static final long serialVersionUID = -8600370225577113762L;
+import com.coveo.spillway.limit.LimitDefinition;
 
-  public SpillwayException(String message) {
-    super(message);
-  }
+import java.time.Duration;
 
-  public SpillwayException(String message, Throwable cause) {
-    super(message, cause);
+import static com.google.common.truth.Truth.assertThat;
+
+public class LimitDefinitionTest {
+
+  @Test
+  public void toStringLooksGood() {
+    String toString = new LimitDefinition("perUser", 5, Duration.ofHours(5)).toString();
+
+    assertThat(toString).isEqualTo("perUser[5 calls/PT5H]");
   }
 }

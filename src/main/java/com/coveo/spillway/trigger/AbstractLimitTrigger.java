@@ -20,23 +20,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.trigger;
 
-import org.junit.Test;
+import com.coveo.spillway.limit.LimitDefinition;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.function.Function;
+public abstract class AbstractLimitTrigger implements LimitTrigger {
 
-import static com.google.common.truth.Truth.assertThat;
+  private final LimitTriggerCallback callback;
 
-public class LimitTest {
+  public AbstractLimitTrigger(LimitTriggerCallback callback) {
+    this.callback = callback;
+  }
 
-  @Test
-  public void toStringIsTheLimitDefinitionToString() {
-    LimitDefinition limitDefinition = new LimitDefinition("potato", 5, Duration.ofDays(100));
-    Limit<String> limit = new Limit<>(limitDefinition, Function.identity(), new ArrayList<>());
+  protected abstract <T> boolean triggered(
+      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition);
 
-    assertThat(limit.toString()).isEqualTo(limitDefinition.toString());
+  @Override
+  public <T> void callbackIfRequired(
+      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {
+    if (triggered(context, cost, currentLimitValue, limitDefinition)) {
+      callback.trigger(limitDefinition, context);
+    }
   }
 }

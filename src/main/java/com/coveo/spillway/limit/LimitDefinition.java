@@ -20,32 +20,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
-public class ValueThresholdTrigger extends AbstractLimitTrigger {
-  private int triggerValue;
+import java.time.Duration;
 
-  public ValueThresholdTrigger(int triggerValue, LimitTriggerCallback callback) {
-    super(callback);
-    this.triggerValue = triggerValue;
+/**
+ * Container of properties for the {@link Limit} class.
+ * 
+ * @see Limit
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
+public class LimitDefinition {
+  private String name;
+  private int capacity;
+  private Duration expiration;
+
+  public LimitDefinition(String name, int capacity, Duration expiration) {
+    this.name = name;
+    this.capacity = capacity;
+    this.expiration = expiration;
   }
 
-  public int getTriggerValue() {
-    return triggerValue;
+  public String getName() {
+    return name;
   }
 
-  @Override
-  protected <T> boolean triggered(
-      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {
-    // Detect if the limit was exceeded by this call() invocation
-    // This can be detected if the new value is higher than the limit and the previous value is lower
-    // This is possible since the storage guarantees atomicity of operations
-    int previousLimitValue = currentLimitValue - cost;
-    return currentLimitValue > triggerValue && previousLimitValue <= triggerValue;
+  public int getCapacity() {
+    return capacity;
+  }
+
+  public Duration getExpiration() {
+    return expiration;
   }
 
   @Override
   public String toString() {
-    return "LimitTrigger{" + "limitValue=" + triggerValue + '}';
+    return name + "[" + capacity + " calls/" + expiration + "]";
   }
 }

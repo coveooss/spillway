@@ -22,6 +22,9 @@
  */
 package com.coveo.spillway;
 
+import com.coveo.spillway.limit.Limit;
+import com.coveo.spillway.limit.LimitUsageStorage;
+
 /**
  * Factory to create {@link Spillway} objects using the specified storage method.
  * 

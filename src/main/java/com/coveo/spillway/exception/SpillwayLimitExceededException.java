@@ -20,24 +20,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.exception;
 
-public abstract class AbstractLimitTrigger implements LimitTrigger {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-  private final LimitTriggerCallback callback;
+import com.coveo.spillway.limit.LimitDefinition;
 
-  public AbstractLimitTrigger(LimitTriggerCallback callback) {
-    this.callback = callback;
+public class SpillwayLimitExceededException extends SpillwayException {
+
+  private static final long serialVersionUID = 6459670418763015179L;
+  
+  private List<LimitDefinition> exceededLimits = new ArrayList<>();
+  private Object context;
+
+  public SpillwayLimitExceededException(LimitDefinition limitDefinition, Object context, int cost) {
+    this(Arrays.asList(limitDefinition), context, cost);
   }
 
-  protected abstract <T> boolean triggered(
-      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition);
+  public SpillwayLimitExceededException(
+      List<LimitDefinition> limitDefinitions, Object context, int cost) {
+    super(
+        "Attempted to use " + cost + " units in limit " + limitDefinitions + " but it exceeds it.");
+    exceededLimits.addAll(limitDefinitions);
+    this.context = context;
+  }
 
-  @Override
-  public <T> void callbackIfRequired(
-      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {
-    if (triggered(context, cost, currentLimitValue, limitDefinition)) {
-      callback.trigger(limitDefinition, context);
-    }
+  public List<LimitDefinition> getExceededLimits() {
+    return Collections.unmodifiableList(exceededLimits);
+  }
+
+  public Object getContext() {
+    return context;
   }
 }

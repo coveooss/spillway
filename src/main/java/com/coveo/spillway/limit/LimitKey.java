@@ -20,9 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
 import java.time.Instant;
+
+import com.coveo.spillway.storage.AddAndGetRequest;
 
 public class LimitKey {
   private String resource;

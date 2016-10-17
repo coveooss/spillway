@@ -20,8 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.storage;
 
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.AsyncLimitUsageStorage;
+import com.coveo.spillway.storage.RedisStorage;
 import com.google.common.base.Stopwatch;
 
 import org.apache.commons.lang3.tuple.Pair;

@@ -20,15 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.trigger;
 
-@FunctionalInterface
-public interface LimitTriggerCallback {
-  LimitTriggerCallback DO_NOTHING = (limitDefinition, context) -> {};
+import com.coveo.spillway.limit.LimitDefinition;
 
-  void trigger(LimitDefinition definition, Object context);
-
-  static LimitTriggerCallback doNothing() {
-    return DO_NOTHING;
-  }
+public interface LimitTrigger {
+  <T> void callbackIfRequired(
+      T context, int cost, int currentValue, LimitDefinition limitDefinition);
 }

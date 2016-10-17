@@ -20,37 +20,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
+import org.junit.Test;
+
+import com.coveo.spillway.limit.Limit;
+import com.coveo.spillway.limit.LimitDefinition;
+
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.function.Function;
 
-public class SpillwayLimitExceededException extends SpillwayException {
+import static com.google.common.truth.Truth.assertThat;
 
-  private static final long serialVersionUID = 6459670418763015179L;
-  
-  private List<LimitDefinition> exceededLimits = new ArrayList<>();
-  private Object context;
+public class LimitTest {
 
-  public SpillwayLimitExceededException(LimitDefinition limitDefinition, Object context, int cost) {
-    this(Arrays.asList(limitDefinition), context, cost);
-  }
+  @Test
+  public void toStringIsTheLimitDefinitionToString() {
+    LimitDefinition limitDefinition = new LimitDefinition("potato", 5, Duration.ofDays(100));
+    Limit<String> limit = new Limit<>(limitDefinition, Function.identity(), new ArrayList<>());
 
-  public SpillwayLimitExceededException(
-      List<LimitDefinition> limitDefinitions, Object context, int cost) {
-    super(
-        "Attempted to use " + cost + " units in limit " + limitDefinitions + " but it exceeds it.");
-    exceededLimits.addAll(limitDefinitions);
-    this.context = context;
-  }
-
-  public List<LimitDefinition> getExceededLimits() {
-    return Collections.unmodifiableList(exceededLimits);
-  }
-
-  public Object getContext() {
-    return context;
+    assertThat(limit.toString()).isEqualTo(limitDefinition.toString());
   }
 }

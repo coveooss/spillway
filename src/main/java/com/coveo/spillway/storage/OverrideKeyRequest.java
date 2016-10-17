@@ -20,11 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway.memory;
-
-import com.coveo.spillway.LimitKey;
+package com.coveo.spillway.storage;
 
 import java.time.Instant;
+
+import com.coveo.spillway.limit.LimitKey;
 
 public class OverrideKeyRequest {
   private LimitKey limitKey;

@@ -22,7 +22,15 @@
  */
 package com.coveo.spillway;
 
-import com.coveo.spillway.memory.InMemoryStorage;
+import com.coveo.spillway.exception.SpillwayLimitExceededException;
+import com.coveo.spillway.limit.Limit;
+import com.coveo.spillway.limit.LimitBuilder;
+import com.coveo.spillway.limit.LimitDefinition;
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.limit.LimitUsageStorage;
+import com.coveo.spillway.storage.InMemoryStorage;
+import com.coveo.spillway.trigger.LimitTriggerCallback;
+import com.coveo.spillway.trigger.ValueThresholdTrigger;
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.Before;
