@@ -26,6 +26,18 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Contains all the the necessary information to enforce a limit
+ * specified by the user. This also incluses the various call back 
+ * when the capacity is reached.
+ * </p>
+ * Should always be created using the {@link LimitBuilder}.
+ * 
+ * @see LimitBuilder
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class Limit<T> {
 
   private LimitDefinition definition;

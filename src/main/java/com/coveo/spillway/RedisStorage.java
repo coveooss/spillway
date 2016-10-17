@@ -38,6 +38,17 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 
+/**
+ * Implementation of {@link LimitUsageStorage} using a Redis storage.
+ * </p>
+ * Uses a {@link Jedis} client to communicate with the database.
+ * </p>
+ * We suggest to wrap this storage in the {@link AsyncLimitUsageStorage}
+ * to avoid slowing down queries if external troubles occurs with the database.
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class RedisStorage implements LimitUsageStorage {
 
   private static final String KEY_SEPARATOR = "|";

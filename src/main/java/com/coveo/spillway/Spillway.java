@@ -34,6 +34,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Contains methods to easily interact with the defined limits in the storage
+ * and test if the incomming query should be throttled.
+ * </p>
+ * Should always be built using the {@link SpillwayFactory}.
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class Spillway<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(Spillway.class);
@@ -49,10 +58,23 @@ public class Spillway<T> {
     this.limits = Collections.unmodifiableList(Arrays.asList(limits));
   }
 
+  /**
+   * Behave like {@link #call(Object, int)} with {@code cost} of one.
+   * 
+   * @see #call(Object, int)
+   */
   public void call(T context) throws SpillwayLimitExceededException {
     call(context, 1);
   }
 
+  /**
+   * Verify if the query should be throttled using the specified cost.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *                will be applied if it was specified
+   * @param cost The cost of the query
+   * @throws SpillwayLimitExceededException If one the enforced limit is exceeded
+   */
   public void call(T context, int cost) throws SpillwayLimitExceededException {
     List<LimitDefinition> exceededLimits = getExceededLimits(context, cost);
     if (!exceededLimits.isEmpty()) {
@@ -60,10 +82,23 @@ public class Spillway<T> {
     }
   }
 
+  /**
+   * Behave like {@link #tryCall(Object, int)} with {@code cost} of one.
+   * 
+   * @see #tryCall(Object, int)
+   */
   public boolean tryCall(T context) {
     return tryCall(context, 1);
   }
 
+  /**
+   * Verify if the query should be throttled using the specified cost.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *                will be applied if it was specified
+   * @param cost The cost of the query
+   * @return True if one the enforced limit is exceeded, false otherwise
+   */
   public boolean tryCall(T context, int cost) {
     return getExceededLimits(context, cost).isEmpty();
   }

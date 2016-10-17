@@ -22,9 +22,8 @@
  */
 package com.coveo.spillway;
 
-import com.google.common.collect.ImmutableMap;
-
 import com.coveo.spillway.memory.InMemoryStorage;
+import com.google.common.collect.ImmutableMap;
 
 import org.junit.Before;
 import org.junit.Test;

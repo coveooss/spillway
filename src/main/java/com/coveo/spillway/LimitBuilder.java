@@ -27,6 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Contains helper methods to easily create {@link com.coveo.spillway.Limit}
+ * Genereal usage is the following :
+ * <pre>
+ * {@code
+ * LimitBuilder.of("perIp").to(3).per(Duration.ofHours(1)).withExceededCallback(myCallback).build();
+ * }
+ * </pre>
+ * 
+ * @see Limit
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class LimitBuilder<T> {
 
   private String limitName;
@@ -43,21 +57,46 @@ public class LimitBuilder<T> {
     return this;
   }
 
+  /**
+   * @param expiration The duration of the limit before it is reset
+   * @return The current LimitBuilder
+   */
   public LimitBuilder<T> per(Duration expiration) {
     this.limitExpiration = expiration;
     return this;
   }
 
+  /**
+   * If necessary, adds a custom {@link LimitTrigger}.
+   * Some implementations already exists.
+   * 
+   * @see ValueThresholdTrigger
+   * @see PercentageThresholdTrigger
+   * 
+   * @param limitTrigger Custom {@link LimitTrigger} 
+   * @return The current LimitBuilder
+   */
   public LimitBuilder<T> withLimitTrigger(LimitTrigger limitTrigger) {
     this.triggers.add(limitTrigger);
     return this;
   }
 
+  /**
+   * Adds a call back that will be called when the specified limit (using {@link #to(int)}) is reached.
+   * 
+   * @param limitTriggerCallback The callback {@link LimitTriggerCallback} 
+   * @return The current LimitBuilder
+   */
   public LimitBuilder<T> withExceededCallback(LimitTriggerCallback limitTriggerCallback) {
     triggers.add(new ValueThresholdTrigger(limitCapacity, limitTriggerCallback));
     return this;
   }
 
+  /**
+   * When all parameters are set, call this method to get the resulting {@link Limit}
+   * 
+   * @return The built limit
+   */
   public Limit<T> build() {
     return new Limit<>(
         new LimitDefinition(limitName, limitCapacity, limitExpiration),
@@ -65,10 +104,23 @@ public class LimitBuilder<T> {
         triggers);
   }
 
+  /**
+   * Begin the creation of a new limit.
+   * 
+   * @param limitName The name of the created limit 
+   * @return A new LimitBuilder
+   */
   public static LimitBuilder<String> of(String limitName) {
     return of(limitName, Function.identity());
   }
 
+  /**
+   * Begin the creation of a new limit.
+   * 
+   * @param limitName The name of the created limit 
+   * @param propertyExtractor Function used to fetch the throttled property
+   * @return A new LimitBuilder
+   */
   public static <T> LimitBuilder<T> of(String limitName, Function<T, String> propertyExtractor) {
     LimitBuilder<T> limitBuilder = new LimitBuilder<>();
     limitBuilder.limitName = limitName;

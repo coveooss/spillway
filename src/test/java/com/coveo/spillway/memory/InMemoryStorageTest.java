@@ -25,6 +25,8 @@ package com.coveo.spillway.memory;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.coveo.spillway.memory.InMemoryStorage;
+
 import java.time.Duration;
 import java.time.Instant;
 

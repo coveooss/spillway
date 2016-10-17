@@ -30,8 +30,24 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Interface that defines a distributed storage that could be used with SpillWay
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public interface LimitUsageStorage {
 
+  /**
+   * Increments the specified limit by one and returns the current count.
+   * 
+   * @param resource The resource name on which the limit is enforced
+   * @param limitName The name of the limit 
+   * @param property The name of the property used in the limit
+   * @param expiration The duration of the limit before it is reset
+   * @param eventTimestamp The Instant at which the event was recorded
+   * @return A Pair of the limit and its current count
+   */
   default Pair<LimitKey, Integer> incrementAndGet(
       String resource,
       String limitName,
@@ -41,6 +57,17 @@ public interface LimitUsageStorage {
     return addAndGet(resource, limitName, property, expiration, eventTimestamp, 1);
   }
 
+  /**
+   * Increments the specified limit by the cost and returns the current count.
+   * 
+   * @param resource The resource name on which the limit is enforced
+   * @param limitName The name of the limit 
+   * @param property The name of the property used in the limit
+   * @param expiration The duration of the limit before it is reset
+   * @param eventTimestamp The Instant at which the event was recorded
+   * @param cost The cost the query
+   * @return A Pair of the limit and its current count
+   */
   default Pair<LimitKey, Integer> addAndGet(
       String resource,
       String limitName,
@@ -59,13 +86,28 @@ public interface LimitUsageStorage {
             .build());
   }
 
+  /**
+   * Increments the specified limit by the cost and returns the current count.
+   * 
+   * @param request An {@link AddAndGetRequest} that wraps all necessary information to perform the increment
+   * @return A Pair of the limit and its current count
+   */
   default Pair<LimitKey, Integer> addAndGet(AddAndGetRequest request) {
     Map.Entry<LimitKey, Integer> value =
         addAndGet(Arrays.asList(request)).entrySet().iterator().next();
     return Pair.of(value.getKey(), value.getValue());
   }
 
+  /**
+   * Processes all {@link AddAndGetRequest} and returns the current count for each limit.
+   * 
+   * @param requests An collection of {@link AddAndGetRequest} that wrap all necessary information to perform the increments
+   * @return A Map of the limits and their current count
+   */
   Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests);
 
+  /**
+   * @return A Map of all the enforced limits and their current count
+   */
   Map<LimitKey, Integer> debugCurrentLimitCounters();
 }

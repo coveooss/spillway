@@ -24,6 +24,14 @@ package com.coveo.spillway;
 
 import java.time.Duration;
 
+/**
+ * Container of properties for the {@link Limit} class.
+ * 
+ * @see Limit
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class LimitDefinition {
   private String name;
   private int capacity;

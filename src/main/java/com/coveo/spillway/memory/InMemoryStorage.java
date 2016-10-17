@@ -36,6 +36,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of {@link LimitUsageStorage} using memory.
+ * </p>
+ * Not recommended as a distributed storage solution since sharing memory
+ * can be complicated. Perfect for local usages.
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class InMemoryStorage implements LimitUsageStorage {
 
   Map<Instant, Map<LimitKey, AtomicInteger>> map = new ConcurrentHashMap<>();

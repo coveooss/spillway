@@ -22,12 +22,12 @@
  */
 package com.coveo.spillway;
 
-import com.coveo.spillway.memory.InMemoryStorage;
-import com.coveo.spillway.memory.OverrideKeyRequest;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.coveo.spillway.memory.InMemoryStorage;
+import com.coveo.spillway.memory.OverrideKeyRequest;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -38,6 +38,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+/**
+ * An asynchronous implementation of {@link LimitUsageStorage}.
+ * </p>
+ * This storage internally uses a {@link InMemoryStorage} as cache and performs
+ * asynchronous calls to the distributed storage to share information.
+ * </p>
+ * This it particularly usefull when using a database over the network as
+ * the queries are not slowed down by any external problems. 
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class AsyncLimitUsageStorage implements LimitUsageStorage {
 
   private static final Logger logger = LoggerFactory.getLogger(AsyncLimitUsageStorage.class);
