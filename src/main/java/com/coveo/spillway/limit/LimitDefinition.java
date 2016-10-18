@@ -20,37 +20,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+import java.time.Duration;
 
 /**
- * Factory to create {@link Spillway} objects using the specified storage method.
+ * Container of properties for the {@link Limit} class.
+ *
+ * @see Limit
  *
  * @author Guillaume Simard
  * @since 1.0.0
  */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
+public class LimitDefinition {
+  private String name;
+  private int capacity;
+  private Duration expiration;
 
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
+  public LimitDefinition(String name, int capacity, Duration expiration) {
+    this.name = name;
+    this.capacity = capacity;
+    this.expiration = expiration;
   }
 
-  /**
-   * Creates a new {@link Spillway}
-   *
-   * @param <T> The type of the context. String if not using a propertyExtractor
-   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
-   *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
-   */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+  public String getName() {
+    return name;
+  }
+
+  public int getCapacity() {
+    return capacity;
+  }
+
+  public Duration getExpiration() {
+    return expiration;
+  }
+
+  @Override
+  public String toString() {
+    return name + "[" + capacity + " calls/" + expiration + "]";
   }
 }

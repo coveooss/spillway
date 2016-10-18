@@ -20,37 +20,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.trigger;
 
-import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+import com.coveo.spillway.limit.LimitDefinition;
 
 /**
- * Factory to create {@link Spillway} objects using the specified storage method.
+ * Functional interface for all call-back in the library.
+ * <p>
+ * This function is used by {@link AbstractLimitTrigger}.
+ *
+ * @see AbstractLimitTrigger
  *
  * @author Guillaume Simard
  * @since 1.0.0
  */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
-
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
-  }
+@FunctionalInterface
+public interface LimitTriggerCallback {
+  LimitTriggerCallback DO_NOTHING = (limitDefinition, context) -> {};
 
   /**
-   * Creates a new {@link Spillway}
+   * This method is called by by {@link AbstractLimitTrigger#callbackIfRequired(Object, int, int, LimitDefinition)}
+   * if the current limit associated counter meets the trigger value.
    *
-   * @param <T> The type of the context. String if not using a propertyExtractor
-   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
-   *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
+   * @param definition The properties of the current limit
+   * @param context Either the name of the limit OR the object on which the propertyExtractor
+   *                ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                has been applied if it was specified
    */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+  void trigger(LimitDefinition definition, Object context);
+
+  static LimitTriggerCallback doNothing() {
+    return DO_NOTHING;
   }
 }

@@ -20,37 +20,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.storage.utils;
 
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+import java.time.Instant;
+
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.AsyncLimitUsageStorage;
+import com.coveo.spillway.storage.InMemoryStorage;
 
 /**
- * Factory to create {@link Spillway} objects using the specified storage method.
+ * Internally created by {@link AsyncLimitUsageStorage} to override
+ * keys in the {@link InMemoryStorage} cache when synchronizing with
+ * the distributed repository.
  *
  * @author Guillaume Simard
  * @since 1.0.0
  */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
+public class OverrideKeyRequest {
+  private LimitKey limitKey;
 
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
+  public OverrideKeyRequest(LimitKey limitKey, Instant expirationDate, int newValue) {
+    this.limitKey = limitKey;
+    this.expirationDate = expirationDate;
+    this.newValue = newValue;
   }
 
-  /**
-   * Creates a new {@link Spillway}
-   *
-   * @param <T> The type of the context. String if not using a propertyExtractor
-   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
-   *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
-   */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+  private Instant expirationDate;
+  private int newValue;
+
+  public LimitKey getLimitKey() {
+    return limitKey;
+  }
+
+  public Instant getExpirationDate() {
+    return expirationDate;
+  }
+
+  public int getNewValue() {
+    return newValue;
   }
 }

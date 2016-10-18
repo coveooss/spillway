@@ -20,37 +20,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.trigger;
 
-import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+import com.coveo.spillway.limit.LimitDefinition;
 
 /**
- * Factory to create {@link Spillway} objects using the specified storage method.
+ * Interface for all limit triggers.
  *
  * @author Guillaume Simard
  * @since 1.0.0
  */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
-
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
-  }
-
+public interface LimitTrigger {
   /**
-   * Creates a new {@link Spillway}
+   * The method will be called each time a query is checked.
    *
    * @param <T> The type of the context. String if not using a propertyExtractor
    *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
    *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @param cost The cost of the current query
+   * @param currentValue The current limit associated counter (including the current query cost)
+   * @param limitDefinition The properties of the current limit
    */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
-  }
+  <T> void callbackIfRequired(
+      T context, int cost, int currentValue, LimitDefinition limitDefinition);
 }

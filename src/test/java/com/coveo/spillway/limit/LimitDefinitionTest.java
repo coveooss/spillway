@@ -20,37 +20,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.limit;
 
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+import org.junit.Test;
 
-/**
- * Factory to create {@link Spillway} objects using the specified storage method.
- *
- * @author Guillaume Simard
- * @since 1.0.0
- */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
+import com.coveo.spillway.limit.LimitDefinition;
 
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
-  }
+import java.time.Duration;
 
-  /**
-   * Creates a new {@link Spillway}
-   *
-   * @param <T> The type of the context. String if not using a propertyExtractor
-   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
-   *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
-   */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+import static com.google.common.truth.Truth.assertThat;
+
+public class LimitDefinitionTest {
+
+  @Test
+  public void toStringLooksGood() {
+    String toString = new LimitDefinition("perUser", 5, Duration.ofHours(5)).toString();
+
+    assertThat(toString).isEqualTo("perUser[5 calls/PT5H]");
   }
 }

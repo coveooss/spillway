@@ -1,8 +1,41 @@
-package com.coveo.spillway;
+/**
+ * The MIT License
+ * Copyright (c) 2016 Coveo
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package com.coveo.spillway.storage.utils;
 
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Container of properties necessary to increase the current current value of
+ * a limit in the storage and return it.
+ * <p>
+ * Should always be built using the {@link Builder}.
+ *
+ * @see Builder
+ *
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class AddAndGetRequest {
   private String resource;
   private String limitName;
@@ -53,6 +86,20 @@ public class AddAndGetRequest {
             (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
   }
 
+  /**
+   * Utility class to build {@link AddAndGetRequest}.
+   * General usage is the following :
+   * <pre>
+   * {@code
+   * AddAndGetRequest.Builder().withResource("test").build();
+   * }
+   * </pre>
+   *
+   * @see AddAndGetRequest
+   *
+   * @author Guillaume Simard
+   * @since 1.0.0
+   */
   public static final class Builder {
     private String resource;
     private String limitName;

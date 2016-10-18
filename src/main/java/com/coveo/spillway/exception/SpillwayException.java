@@ -20,37 +20,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
-
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+package com.coveo.spillway.exception;
 
 /**
- * Factory to create {@link Spillway} objects using the specified storage method.
+ * Base exception for all exceptions in Spillway.
  *
  * @author Guillaume Simard
  * @since 1.0.0
  */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
+public abstract class SpillwayException extends Exception {
 
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
+  private static final long serialVersionUID = -8600370225577113762L;
+
+  public SpillwayException(String message) {
+    super(message);
   }
 
-  /**
-   * Creates a new {@link Spillway}
-   *
-   * @param <T> The type of the context. String if not using a propertyExtractor
-   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
-   *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
-   */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+  public SpillwayException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

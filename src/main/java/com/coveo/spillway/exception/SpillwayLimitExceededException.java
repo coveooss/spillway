@@ -20,37 +20,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway;
+package com.coveo.spillway.exception;
 
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitBuilder;
-import com.coveo.spillway.storage.LimitUsageStorage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import com.coveo.spillway.Spillway;
+import com.coveo.spillway.limit.LimitDefinition;
 
 /**
- * Factory to create {@link Spillway} objects using the specified storage method.
+ * Exception thrown by {@link Spillway#call(Object, int)} when the counter exceeds the limit.
  *
  * @author Guillaume Simard
  * @since 1.0.0
  */
-public class SpillwayFactory {
-  private final LimitUsageStorage storage;
+public class SpillwayLimitExceededException extends SpillwayException {
 
-  public SpillwayFactory(LimitUsageStorage storage) {
-    this.storage = storage;
+  private static final long serialVersionUID = 6459670418763015179L;
+
+  private List<LimitDefinition> exceededLimits = new ArrayList<>();
+  private Object context;
+
+  public SpillwayLimitExceededException(LimitDefinition limitDefinition, Object context, int cost) {
+    this(Arrays.asList(limitDefinition), context, cost);
   }
 
-  /**
-   * Creates a new {@link Spillway}
-   *
-   * @param <T> The type of the context. String if not using a propertyExtractor
-   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
-   *
-   * @param resource The name of the resource on which the limit are enforced
-   * @param limits The different enforced limits
-   * @return The new {@link Spillway}
-   */
-  @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+  public SpillwayLimitExceededException(
+      List<LimitDefinition> limitDefinitions, Object context, int cost) {
+    super(
+        "Attempted to use " + cost + " units in limit " + limitDefinitions + " but it exceeds it.");
+    exceededLimits.addAll(limitDefinitions);
+    this.context = context;
+  }
+
+  public List<LimitDefinition> getExceededLimits() {
+    return Collections.unmodifiableList(exceededLimits);
+  }
+
+  public Object getContext() {
+    return context;
   }
 }
