@@ -27,8 +27,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.coveo.spillway.Spillway;
 import com.coveo.spillway.limit.LimitDefinition;
 
+/**
+ * Exception thrown by {@link Spillway#call(Object, int)} when the counter exceeds the limit.
+ *
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class SpillwayLimitExceededException extends SpillwayException {
 
   private static final long serialVersionUID = 6459670418763015179L;

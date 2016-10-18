@@ -22,6 +22,12 @@
  */
 package com.coveo.spillway.exception;
 
+/**
+ * Base exception for all exceptions in SpillWay.
+ *
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public abstract class SpillwayException extends Exception {
 
   private static final long serialVersionUID = -8600370225577113762L;
