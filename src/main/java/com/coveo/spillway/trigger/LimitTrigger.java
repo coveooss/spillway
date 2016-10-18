@@ -35,6 +35,9 @@ public interface LimitTrigger {
   /**
    * The method will be called each time a query is checked.
    *
+   * @param <T> The type of the context. String if not using a propertyExtractor
+ *              ({@link LimitBuilder#of(String, java.util.function.Function)}).
+   *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @param cost The cost of the current query

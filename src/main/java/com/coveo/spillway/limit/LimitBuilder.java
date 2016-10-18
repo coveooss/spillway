@@ -124,6 +124,9 @@ public class LimitBuilder<T> {
   /**
    * Begin the creation of a new limit.
    *
+   * @param <T> The type of the context. String if not using a propertyExtractor
+ *              ({@link LimitBuilder#of(String, java.util.function.Function)}).
+   *
    * @param limitName The name of the created limit
    * @param propertyExtractor Function used to fetch the throttled property
    * @return A new LimitBuilder

@@ -50,7 +50,7 @@ public class PercentageThresholdTrigger extends AbstractLimitTrigger {
 
   /**
    * This method compares the current percentage with the trigger percentage.
-   * </p>
+   * <p>
    * {@inheritDoc}
    * @return True is its the first time the percentage is over the trigger, false otherwise
    */

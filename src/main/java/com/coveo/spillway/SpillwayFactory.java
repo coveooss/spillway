@@ -23,6 +23,7 @@
 package com.coveo.spillway;
 
 import com.coveo.spillway.limit.Limit;
+import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.storage.LimitUsageStorage;
 
 /**
@@ -40,6 +41,9 @@ public class SpillwayFactory {
 
   /**
    * Creates a new {@link Spillway}
+   *
+   * @param <T> The type of the context. String if not using a propertyExtractor
+ *              ({@link LimitBuilder#of(String, java.util.function.Function)}).
    *
    * @param resource The name of the resource on which the limit are enforced
    * @param limits The different enforced limits

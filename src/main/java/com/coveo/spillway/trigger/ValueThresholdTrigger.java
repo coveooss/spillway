@@ -44,7 +44,7 @@ public class ValueThresholdTrigger extends AbstractLimitTrigger {
 
   /**
    * This method compares the current value with the trigger value.
-   * </p>
+   * <p>
    * {@inheritDoc}
    * @return True is its the first time the value is over the trigger, false otherwise
    */
