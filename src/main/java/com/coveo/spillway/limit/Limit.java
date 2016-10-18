@@ -35,6 +35,8 @@ import com.coveo.spillway.trigger.LimitTrigger;
  * <p>
  * Should always be created using the {@link LimitBuilder}.
  * 
+ * @param <T> The type of the context. String if not using a propertyExtractor 
+ *            ({@link LimitBuilder#of(String, java.util.function.Function)}).  
  * @see LimitBuilder
  * 
  * @author Guillaume Simard

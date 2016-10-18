@@ -49,6 +49,9 @@ import java.util.stream.Collectors;
  * <p>
  * Should always be built using the {@link SpillwayFactory}.
  * 
+ * @param <T> The type of the context. String if not using a propertyExtractor 
+ *            ({@link LimitBuilder#of(String, java.util.function.Function)}). 
+ * 
  * @author Guillaume Simard
  * @since 1.0.0
  */
@@ -71,6 +74,10 @@ public class Spillway<T> {
    * Behave like {@link #call(Object, int)} with {@code cost} of one.
    * 
    * @see #call(Object, int)
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *                will be applied if it was specified
+   * @throws SpillwayLimitExceededException If one the enforced limit is exceeded
    */
   public void call(T context) throws SpillwayLimitExceededException {
     call(context, 1);
@@ -95,6 +102,10 @@ public class Spillway<T> {
    * Behave like {@link #tryCall(Object, int)} with {@code cost} of one.
    * 
    * @see #tryCall(Object, int)
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *                will be applied if it was specified
+   * @return True if one the enforced limit is exceeded, false otherwise
    */
   public boolean tryCall(T context) {
     return tryCall(context, 1);

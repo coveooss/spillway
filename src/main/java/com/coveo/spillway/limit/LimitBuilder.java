@@ -41,6 +41,8 @@ import com.coveo.spillway.trigger.ValueThresholdTrigger;
  * }
  * </pre>
  * 
+ * @param <T> The type of the context. String if not using a propertyExtractor 
+ *            ({@link LimitBuilder#of(String, java.util.function.Function)}). 
  * @see Limit
  * 
  * @author Guillaume Simard
