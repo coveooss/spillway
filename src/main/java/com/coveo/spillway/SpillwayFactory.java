@@ -43,7 +43,7 @@ public class SpillwayFactory {
    * Creates a new {@link Spillway}
    *
    * @param <T> The type of the context. String if not using a propertyExtractor
- *              ({@link LimitBuilder#of(String, java.util.function.Function)}).
+   *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
    *
    * @param resource The name of the resource on which the limit are enforced
    * @param limits The different enforced limits
