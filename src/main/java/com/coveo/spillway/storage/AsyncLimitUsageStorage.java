@@ -27,7 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.limit.LimitUsageStorage;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
+import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
 import java.time.Instant;
 import java.util.Collection;

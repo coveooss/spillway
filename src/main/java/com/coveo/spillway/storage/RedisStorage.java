@@ -25,7 +25,7 @@ package com.coveo.spillway.storage;
 import org.apache.commons.lang3.StringUtils;
 
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.limit.LimitUsageStorage;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
 
 import java.net.URI;
 import java.time.Instant;

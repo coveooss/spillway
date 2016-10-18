@@ -20,11 +20,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway.storage;
+package com.coveo.spillway.storage.utils;
 
 import java.time.Instant;
 
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.AsyncLimitUsageStorage;
+import com.coveo.spillway.storage.InMemoryStorage;
 
 /**
  * Internally created by {@link AsyncLimitUsageStorage} to override

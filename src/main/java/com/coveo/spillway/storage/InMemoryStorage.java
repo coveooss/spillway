@@ -23,7 +23,8 @@
 package com.coveo.spillway.storage;
 
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.limit.LimitUsageStorage;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
+import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
 import java.time.Instant;
 import java.util.Collection;

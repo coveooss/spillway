@@ -30,8 +30,8 @@ import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.limit.LimitUsageStorage;
-import com.coveo.spillway.storage.AddAndGetRequest;
+import com.coveo.spillway.storage.LimitUsageStorage;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.trigger.LimitTrigger;
 
 import java.time.Instant;

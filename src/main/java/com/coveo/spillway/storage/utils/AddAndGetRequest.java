@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway.storage;
+package com.coveo.spillway.storage.utils;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -24,7 +24,7 @@ package com.coveo.spillway.limit;
 
 import java.time.Instant;
 
-import com.coveo.spillway.storage.AddAndGetRequest;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
 
 /**
  * Container of properties of the {@link Limit} class
