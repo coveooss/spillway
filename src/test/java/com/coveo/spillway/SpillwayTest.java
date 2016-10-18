@@ -29,6 +29,7 @@ import com.coveo.spillway.limit.LimitDefinition;
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.LimitUsageStorage;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.trigger.LimitTriggerCallback;
 import com.coveo.spillway.trigger.ValueThresholdTrigger;
 import com.google.common.collect.ImmutableMap;
@@ -47,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -280,8 +281,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void ifCallbackThrowsWeIgnoreThatCallbackAndContinue()
-      throws SpillwayLimitExceededException {
+  public void ifCallbackThrowsWeIgnoreThatCallbackAndContinue() {
     LimitTriggerCallback callbackThatIsOkay = mock(LimitTriggerCallback.class);
     LimitTriggerCallback callbackThatThrows = mock(LimitTriggerCallback.class);
     doThrow(RuntimeException.class)
@@ -365,7 +365,7 @@ public class SpillwayTest {
 
   @Test
   public void triggersAreIgnoreIfTheStorageReturnsAnIncoherentResponse() {
-    when(mockedStorage.addAndGet(anyList()))
+    when(mockedStorage.addAndGet(anyListOf(AddAndGetRequest.class)))
         .thenReturn(
             ImmutableMap.of(
                 mock(LimitKey.class), 1, mock(LimitKey.class), 2, mock(LimitKey.class), 3));

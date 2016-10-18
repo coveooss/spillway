@@ -25,7 +25,6 @@ package com.coveo.spillway.storage;
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
-import com.coveo.spillway.storage.utils.AddAndGetRequest.Builder;
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.Before;
