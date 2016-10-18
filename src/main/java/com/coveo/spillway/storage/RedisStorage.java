@@ -48,7 +48,7 @@ import redis.clients.jedis.Response;
  * <p>
  * We suggest to wrap this storage in the {@link AsyncLimitUsageStorage}
  * to avoid slowing down queries if external troubles occurs with the database.
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */

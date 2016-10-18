@@ -35,7 +35,7 @@ import java.util.Map;
 
 /**
  * Interface that defines a distributed storage that could be used with SpillWay.
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
@@ -43,9 +43,9 @@ public interface LimitUsageStorage {
 
   /**
    * Increments the specified limit by one and returns the current count.
-   * 
+   *
    * @param resource The resource name on which the limit is enforced
-   * @param limitName The name of the limit 
+   * @param limitName The name of the limit
    * @param property The name of the property used in the limit
    * @param expiration The duration of the limit before it is reset
    * @param eventTimestamp The Instant at which the event was recorded
@@ -62,9 +62,9 @@ public interface LimitUsageStorage {
 
   /**
    * Increments the specified limit by the cost and returns the current count.
-   * 
+   *
    * @param resource The resource name on which the limit is enforced
-   * @param limitName The name of the limit 
+   * @param limitName The name of the limit
    * @param property The name of the property used in the limit
    * @param expiration The duration of the limit before it is reset
    * @param eventTimestamp The Instant at which the event was recorded
@@ -91,7 +91,7 @@ public interface LimitUsageStorage {
 
   /**
    * Increments the specified limit by the cost and returns the current count.
-   * 
+   *
    * @param request An {@link AddAndGetRequest} that wraps all necessary information to perform the increment
    * @return A Pair of the limit and its current count
    */
@@ -103,7 +103,7 @@ public interface LimitUsageStorage {
 
   /**
    * Processes all {@link AddAndGetRequest} and returns the current count for each limit.
-   * 
+   *
    * @param requests An collection of {@link AddAndGetRequest} that wrap all necessary information to perform the increments
    * @return A Map of the limits and their current count
    */

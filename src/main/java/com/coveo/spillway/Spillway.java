@@ -48,10 +48,10 @@ import java.util.stream.Collectors;
  * and test if the incomming query should be throttled.
  * <p>
  * Should always be built using the {@link SpillwayFactory}.
- * 
- * @param <T> The type of the context. String if not using a propertyExtractor 
- *            ({@link LimitBuilder#of(String, java.util.function.Function)}). 
- * 
+ *
+ * @param <T> The type of the context. String if not using a propertyExtractor
+ *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
@@ -72,10 +72,10 @@ public class Spillway<T> {
 
   /**
    * Behave like {@link #call(Object, int)} with {@code cost} of one.
-   * 
+   *
    * @see #call(Object, int)
    *
-   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @throws SpillwayLimitExceededException If one the enforced limit is exceeded
    */
@@ -85,8 +85,8 @@ public class Spillway<T> {
 
   /**
    * Verify if the query should be throttled using the specified cost.
-   * 
-   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @param cost The cost of the query
    * @throws SpillwayLimitExceededException If one the enforced limit is exceeded
@@ -100,10 +100,10 @@ public class Spillway<T> {
 
   /**
    * Behave like {@link #tryCall(Object, int)} with {@code cost} of one.
-   * 
+   *
    * @see #tryCall(Object, int)
-   * 
-   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @return True if one the enforced limit is exceeded, false otherwise
    */
@@ -113,8 +113,8 @@ public class Spillway<T> {
 
   /**
    * Verify if the query should be throttled using the specified cost.
-   * 
-   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @param cost The cost of the query
    * @return True if one the enforced limit is exceeded, false otherwise

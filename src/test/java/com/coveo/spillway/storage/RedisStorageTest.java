@@ -115,7 +115,8 @@ public class RedisStorageTest {
 
     int result2 =
         storage
-            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP.plusSeconds(1))
+            .incrementAndGet(
+                RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP.plusSeconds(1))
             .getValue();
     assertThat(result2).isEqualTo(1);
   }

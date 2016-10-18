@@ -30,9 +30,9 @@ import java.time.Instant;
  * a limit in the storage and return it.
  * <p>
  * Should always be built using the {@link Builder}.
- * 
+ *
  * @see Builder
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
@@ -90,13 +90,13 @@ public class AddAndGetRequest {
    * Utility class to build {@link AddAndGetRequest}.
    * General usage is the following :
    * <pre>
-     * {@code
-     * AddAndGetRequest.Builder().withResource("test").build();
-     * }
-     * </pre>
-   * 
+   * {@code
+   * AddAndGetRequest.Builder().withResource("test").build();
+   * }
+   * </pre>
+   *
    * @see AddAndGetRequest
-   * 
+   *
    * @author Guillaume Simard
    * @since 1.0.0
    */

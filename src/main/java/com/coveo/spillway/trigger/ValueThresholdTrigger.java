@@ -25,8 +25,8 @@ package com.coveo.spillway.trigger;
 import com.coveo.spillway.limit.LimitDefinition;
 
 /**
- * {@link AbstractLimitTrigger} that compares using a precise trigger value. 
- * 
+ * {@link AbstractLimitTrigger} that compares using a precise trigger value.
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */

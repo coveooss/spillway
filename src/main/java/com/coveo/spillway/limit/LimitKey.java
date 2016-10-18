@@ -29,7 +29,7 @@ import com.coveo.spillway.storage.utils.AddAndGetRequest;
 /**
  * Container of properties of the {@link Limit} class
  * used as a key in Maps and Pairs returned by storages.
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */

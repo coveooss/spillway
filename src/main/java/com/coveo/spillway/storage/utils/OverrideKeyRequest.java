@@ -32,7 +32,7 @@ import com.coveo.spillway.storage.InMemoryStorage;
  * Internally created by {@link AsyncLimitUsageStorage} to override
  * keys in the {@link InMemoryStorage} cache when synchronizing with
  * the distributed repository.
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */

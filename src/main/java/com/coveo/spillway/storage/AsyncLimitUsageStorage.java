@@ -46,8 +46,8 @@ import java.util.stream.Collectors;
  * asynchronous calls to the distributed storage to share information.
  * <p>
  * This it particularly usefull when using a database over the network as
- * the queries are not slowed down by any external problems. 
- * 
+ * the queries are not slowed down by any external problems.
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */

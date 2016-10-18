@@ -26,9 +26,9 @@ import java.time.Duration;
 
 /**
  * Container of properties for the {@link Limit} class.
- * 
+ *
  * @see Limit
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */

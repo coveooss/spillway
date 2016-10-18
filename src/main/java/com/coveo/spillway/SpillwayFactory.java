@@ -27,7 +27,7 @@ import com.coveo.spillway.storage.LimitUsageStorage;
 
 /**
  * Factory to create {@link Spillway} objects using the specified storage method.
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
@@ -40,7 +40,7 @@ public class SpillwayFactory {
 
   /**
    * Creates a new {@link Spillway}
-   * 
+   *
    * @param resource The name of the resource on which the limit are enforced
    * @param limits The different enforced limits
    * @return The new {@link Spillway}

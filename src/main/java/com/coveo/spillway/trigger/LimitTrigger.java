@@ -27,20 +27,20 @@ import com.coveo.spillway.limit.LimitDefinition;
 
 /**
  * Interface for all limit triggers.
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
 public interface LimitTrigger {
-      /**
-       * The method will be called each time a query is checked.
-       * 
-       * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)}) 
-       *                will be applied if it was specified
-       * @param cost The cost of the current query
-       * @param currentValue The current limit associated counter (including the current query cost)
-       * @param limitDefinition The properties of the current limit
-       */
+  /**
+   * The method will be called each time a query is checked.
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @param cost The cost of the current query
+   * @param currentValue The current limit associated counter (including the current query cost)
+   * @param limitDefinition The properties of the current limit
+   */
   <T> void callbackIfRequired(
       T context, int cost, int currentValue, LimitDefinition limitDefinition);
 }

@@ -32,7 +32,7 @@ import com.coveo.spillway.limit.LimitDefinition;
 public class SpillwayLimitExceededException extends SpillwayException {
 
   private static final long serialVersionUID = 6459670418763015179L;
-  
+
   private List<LimitDefinition> exceededLimits = new ArrayList<>();
   private Object context;
 

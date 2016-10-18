@@ -40,11 +40,11 @@ import com.coveo.spillway.trigger.ValueThresholdTrigger;
  * LimitBuilder.of("perIp").to(3).per(Duration.ofHours(1)).withExceededCallback(myCallback).build();
  * }
  * </pre>
- * 
- * @param <T> The type of the context. String if not using a propertyExtractor 
- *            ({@link LimitBuilder#of(String, java.util.function.Function)}). 
+ *
+ * @param <T> The type of the context. String if not using a propertyExtractor
+ *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
  * @see Limit
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
@@ -76,11 +76,11 @@ public class LimitBuilder<T> {
   /**
    * If necessary, adds a custom {@link LimitTrigger}.
    * Some implementations already exists.
-   * 
+   *
    * @see ValueThresholdTrigger
    * @see PercentageThresholdTrigger
-   * 
-   * @param limitTrigger Custom {@link LimitTrigger} 
+   *
+   * @param limitTrigger Custom {@link LimitTrigger}
    * @return The current LimitBuilder
    */
   public LimitBuilder<T> withLimitTrigger(LimitTrigger limitTrigger) {
@@ -90,8 +90,8 @@ public class LimitBuilder<T> {
 
   /**
    * Adds a call back that will be called when the specified limit (using {@link #to(int)}) is reached.
-   * 
-   * @param limitTriggerCallback The callback {@link LimitTriggerCallback} 
+   *
+   * @param limitTriggerCallback The callback {@link LimitTriggerCallback}
    * @return The current LimitBuilder
    */
   public LimitBuilder<T> withExceededCallback(LimitTriggerCallback limitTriggerCallback) {
@@ -101,7 +101,7 @@ public class LimitBuilder<T> {
 
   /**
    * When all parameters are set, call this method to get the resulting {@link Limit}
-   * 
+   *
    * @return The built limit
    */
   public Limit<T> build() {
@@ -113,8 +113,8 @@ public class LimitBuilder<T> {
 
   /**
    * Begin the creation of a new limit.
-   * 
-   * @param limitName The name of the created limit 
+   *
+   * @param limitName The name of the created limit
    * @return A new LimitBuilder
    */
   public static LimitBuilder<String> of(String limitName) {
@@ -123,8 +123,8 @@ public class LimitBuilder<T> {
 
   /**
    * Begin the creation of a new limit.
-   * 
-   * @param limitName The name of the created limit 
+   *
+   * @param limitName The name of the created limit
    * @param propertyExtractor Function used to fetch the throttled property
    * @return A new LimitBuilder
    */

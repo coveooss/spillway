@@ -30,15 +30,15 @@ import com.coveo.spillway.trigger.LimitTrigger;
 
 /**
  * Contains all the the necessary information to enforce a limit
- * specified by the user. This also incluses the various call back 
+ * specified by the user. This also incluses the various call back
  * when the capacity is reached.
  * <p>
  * Should always be created using the {@link LimitBuilder}.
- * 
- * @param <T> The type of the context. String if not using a propertyExtractor 
- *            ({@link LimitBuilder#of(String, java.util.function.Function)}).  
+ *
+ * @param <T> The type of the context. String if not using a propertyExtractor
+ *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
  * @see LimitBuilder
- * 
+ *
  * @author Guillaume Simard
  * @since 1.0.0
  */
