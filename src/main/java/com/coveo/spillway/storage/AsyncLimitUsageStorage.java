@@ -41,10 +41,10 @@ import java.util.stream.Collectors;
 
 /**
  * An asynchronous implementation of {@link LimitUsageStorage}.
- * </p>
+ * <p>
  * This storage internally uses a {@link InMemoryStorage} as cache and performs
  * asynchronous calls to the distributed storage to share information.
- * </p>
+ * <p>
  * This it particularly usefull when using a database over the network as
  * the queries are not slowed down by any external problems. 
  * 

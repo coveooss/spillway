@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link LimitUsageStorage} using memory.
- * </p>
+ * <p>
  * Not recommended as a distributed storage solution since sharing memory
  * can be complicated. Perfect for local usages.
  * 

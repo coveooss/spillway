@@ -28,7 +28,7 @@ import java.time.Instant;
 /**
  * Container of properties necessary to increase the current current value of
  * a limit in the storage and return it.
- * </p>
+ * <p>
  * Should always be built using the {@link Builder}.
  * 
  * @see Builder

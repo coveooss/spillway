@@ -27,7 +27,7 @@ import com.coveo.spillway.limit.LimitDefinition;
 
 /**
  * Functional interface for all call-back in the library.
- * </p>
+ * <p>
  * This function is used by {@link AbstractLimitTrigger}.
  * 
  * @see AbstractLimitTrigger

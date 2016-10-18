@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 /**
  * Contains methods to easily interact with the defined limits in the storage
  * and test if the incomming query should be throttled.
- * </p>
+ * <p>
  * Should always be built using the {@link SpillwayFactory}.
  * 
  * @author Guillaume Simard

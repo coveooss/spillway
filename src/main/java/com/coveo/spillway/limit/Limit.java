@@ -32,7 +32,7 @@ import com.coveo.spillway.trigger.LimitTrigger;
  * Contains all the the necessary information to enforce a limit
  * specified by the user. This also incluses the various call back 
  * when the capacity is reached.
- * </p>
+ * <p>
  * Should always be created using the {@link LimitBuilder}.
  * 
  * @see LimitBuilder

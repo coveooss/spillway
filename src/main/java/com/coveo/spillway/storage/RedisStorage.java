@@ -43,9 +43,9 @@ import redis.clients.jedis.Response;
 
 /**
  * Implementation of {@link LimitUsageStorage} using a Redis storage.
- * </p>
+ * <p>
  * Uses a {@link Jedis} client to communicate with the database.
- * </p>
+ * <p>
  * We suggest to wrap this storage in the {@link AsyncLimitUsageStorage}
  * to avoid slowing down queries if external troubles occurs with the database.
  * 
