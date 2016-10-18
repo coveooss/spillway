@@ -6,11 +6,11 @@
 ## A distributed throttling solution
 
 Spillway is an easy to use solution to add distributed throttling at the software level in your public API.
-This is particularly useful if multiple services are running in different JVM.
-It is also possible to quickly to react when throlling happens with our built-in call-back mechanism.
+This is particularly useful if multiple services are running in different JVMs.
+It is also possible to quickly to react when throttling happens with our built-in call-back mechanism.
 
-Storage currently supported:
-- In memory (for usage in the same JVM)
+Storage backend currently supported:
+- In memory (for usage within the same JVM)
 - Redis
 
 All external storage can be (and should be) wrapped in our asynchronous storage to avoid slowing down/stopping queries if external problems occurs with the external storage.
