@@ -8,7 +8,7 @@
     <version>1.0.0-RC1</version>
     <packaging>jar</packaging>
 
-    <name>${project.groupId}:${project.artifactId}</name>
+    <name>${project.artifactId}</name>
 
     <description>Simple, flexible, distributable rate limiting for your application</description>
     <url>http://github.com/coveo/spillway</url>
@@ -138,6 +138,31 @@
                     <execution>
                         <id>format-code</id>
                         <phase>verify</phase>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <header>com/mycila/maven/plugin/license/templates/MIT.txt</header>
+                    <properties>
+                        <owner>Coveo</owner>
+                    </properties>
+                    <excludes>
+                        <exclude>README</exclude>
+                        <exclude>LICENSE</exclude>
+                        <exclude>pom.xml</exclude>
+                        <exclude>src/test/resources/**</exclude>
+                        <exclude>bin/**</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
                         <goals>
                             <goal>format</goal>
                         </goals>
