@@ -34,7 +34,7 @@ import com.coveo.spillway.trigger.ValueThresholdTrigger;
 
 /**
  * Contains helper methods to easily create {@link com.coveo.spillway.limit.Limit}
- * Genereal usage is the following :
+ * General usage is the following :
  * <pre>
  * {@code
  * LimitBuilder.of("perIp").to(3).per(Duration.ofHours(1)).withExceededCallback(myCallback).build();
