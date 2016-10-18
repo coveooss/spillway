@@ -1,27 +1,27 @@
-# SpillWay
+# Spillway
 [![Build Status](https://travis-ci.org/coveo/spillway.svg?branch=master)](https://travis-ci.org/coveo/spillway)
 [![license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/coveo/spillway/blob/master/LICENSE)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.coveo/spillway/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.coveo/spillway)
 
 ## A distributed throttling solution
 
-SpillWay is an easy to use solution to add distributed throttling at the software level in your public API.
-This is particularly usefull if multiple services are running in different JVM.
+Spillway is an easy to use solution to add distributed throttling at the software level in your public API.
+This is particularly useful if multiple services are running in different JVM.
 It is also possible to quickly to react when throlling happens with our built-in call-back mechanism.
 
 Storage currently supported:
 - In memory (for usage in the same JVM)
 - Redis
 
-All external storage can be (and should be) wrapped in our asynchronous storage to avoid slowing down/stopping queries if external problems occurs with the database.
+All external storage can be (and should be) wrapped in our asynchronous storage to avoid slowing down/stopping queries if external problems occurs with the external storage.
 
 ## Getting Started
-#### Add SpillWay to your project pom
+#### Add Spillway to your project pom
 
 ```xml
 <dependency>
     <groupId>com.coveo</groupId>
-    <artifactId>coveo-cloud-spillway</artifactId>
+    <artifactId>spillway</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
