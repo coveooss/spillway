@@ -22,8 +22,19 @@
  */
 package com.coveo.spillway.trigger;
 
+import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
 
+/**
+ * Base abstract class for our triggers that implements {@link LimitTrigger}.
+ * Calls a {@link LimitTriggerCallback} when the limit is reached.
+ * 
+ * @see LimitTrigger
+ * @see LimitTriggerCallback
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public abstract class AbstractLimitTrigger implements LimitTrigger {
 
   private final LimitTriggerCallback callback;
@@ -32,6 +43,18 @@ public abstract class AbstractLimitTrigger implements LimitTrigger {
     this.callback = callback;
   }
 
+  /**
+   * This method is called by {@link #callbackIfRequired(Object, int, int, LimitDefinition)} to 
+   * verify if the call-back you should be called.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor 
+   *                ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *                will be applied if it was specified
+   * @param cost The cost of the current query
+   * @param currentLimitValue The current limit associated counter (including the current query cost)
+   * @param limitDefinition The properties of the current limit
+   * @return True if the limit is triggered, false otherwise
+   */
   protected abstract <T> boolean triggered(
       T context, int cost, int currentLimitValue, LimitDefinition limitDefinition);
 

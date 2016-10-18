@@ -24,6 +24,12 @@ package com.coveo.spillway.trigger;
 
 import com.coveo.spillway.limit.LimitDefinition;
 
+/**
+ * {@link AbstractLimitTrigger} that compares using a percentage trigger.
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class PercentageThresholdTrigger extends AbstractLimitTrigger {
 
   private final double triggerPercentage;
@@ -42,6 +48,12 @@ public class PercentageThresholdTrigger extends AbstractLimitTrigger {
     return triggerPercentage;
   }
 
+  /**
+   * This method compares the current percentage with the trigger percentage.
+   * </p>
+   * {@inheritDoc}
+   * @return True is its the first time the percentage is over the trigger, false otherwise
+   */
   @Override
   protected <T> boolean triggered(
       T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {

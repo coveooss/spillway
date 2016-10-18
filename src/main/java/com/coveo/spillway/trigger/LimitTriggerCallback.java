@@ -22,12 +22,32 @@
  */
 package com.coveo.spillway.trigger;
 
+import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
 
+/**
+ * Functional interface for all call-back in the library.
+ * </p>
+ * This function is used by {@link AbstractLimitTrigger}.
+ * 
+ * @see AbstractLimitTrigger
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 @FunctionalInterface
 public interface LimitTriggerCallback {
   LimitTriggerCallback DO_NOTHING = (limitDefinition, context) -> {};
 
+  /**
+   * This method is called by by {@link AbstractLimitTrigger#callbackIfRequired(Object, int, int, LimitDefinition)}
+   * if the current limit associated counter meets the trigger value.
+   * 
+   * @param definition The properties of the current limit
+   * @param context Either the name of the limit OR the object on which the propertyExtractor 
+   *                ({@link LimitBuilder#of(String, java.util.function.Function)}) 
+   *                has been applied if it was specified
+   */
   void trigger(LimitDefinition definition, Object context);
 
   static LimitTriggerCallback doNothing() {

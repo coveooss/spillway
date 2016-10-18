@@ -24,6 +24,12 @@ package com.coveo.spillway.trigger;
 
 import com.coveo.spillway.limit.LimitDefinition;
 
+/**
+ * {@link AbstractLimitTrigger} that compares using a precise trigger value. 
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class ValueThresholdTrigger extends AbstractLimitTrigger {
   private int triggerValue;
 
@@ -36,6 +42,12 @@ public class ValueThresholdTrigger extends AbstractLimitTrigger {
     return triggerValue;
   }
 
+  /**
+   * This method compares the current value with the trigger value.
+   * </p>
+   * {@inheritDoc}
+   * @return True is its the first time the value is over the trigger, false otherwise
+   */
   @Override
   protected <T> boolean triggered(
       T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {

@@ -25,6 +25,17 @@ package com.coveo.spillway.storage;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Container of properties necessary to increase the current current value of
+ * a limit in the storage and return it.
+ * </p>
+ * Should always be built using the {@link Builder}.
+ * 
+ * @see Builder
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class AddAndGetRequest {
   private String resource;
   private String limitName;
@@ -75,6 +86,20 @@ public class AddAndGetRequest {
             (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
   }
 
+  /**
+   * Utility class to build {@link AddAndGetRequest}.
+   * General usage is the following :
+   * <pre>
+     * {@code
+     * AddAndGetRequest.Builder().withResource("test").build();
+     * }
+     * </pre>
+   * 
+   * @see AddAndGetRequest
+   * 
+   * @author Guillaume Simard
+   * @since 1.0.0
+   */
   public static final class Builder {
     private String resource;
     private String limitName;

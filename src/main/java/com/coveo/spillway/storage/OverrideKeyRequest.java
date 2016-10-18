@@ -26,6 +26,14 @@ import java.time.Instant;
 
 import com.coveo.spillway.limit.LimitKey;
 
+/**
+ * Internally created by {@link AsyncLimitUsageStorage} to override
+ * keys in the {@link InMemoryStorage} cache when synchronizing with
+ * the distributed repository.
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class OverrideKeyRequest {
   private LimitKey limitKey;
 

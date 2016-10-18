@@ -26,6 +26,13 @@ import java.time.Instant;
 
 import com.coveo.spillway.storage.AddAndGetRequest;
 
+/**
+ * Container of properties of the {@link Limit} class
+ * used as a key in Maps and Pairs returned by storages.
+ * 
+ * @author Guillaume Simard
+ * @since 1.0.0
+ */
 public class LimitKey {
   private String resource;
   private String limitName;
