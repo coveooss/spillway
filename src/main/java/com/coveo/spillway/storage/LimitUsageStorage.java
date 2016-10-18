@@ -34,7 +34,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Interface that defines a distributed storage that could be used with SpillWay.
+ * Interface that defines a distributed storage that could be used with Spillway.
  *
  * @author Guillaume Simard
  * @since 1.0.0

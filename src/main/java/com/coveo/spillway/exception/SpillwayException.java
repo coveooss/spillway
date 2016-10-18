@@ -23,7 +23,7 @@
 package com.coveo.spillway.exception;
 
 /**
- * Base exception for all exceptions in SpillWay.
+ * Base exception for all exceptions in Spillway.
  *
  * @author Guillaume Simard
  * @since 1.0.0

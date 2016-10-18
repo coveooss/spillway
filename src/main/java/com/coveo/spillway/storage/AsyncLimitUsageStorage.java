@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * This storage internally uses a {@link InMemoryStorage} as cache and performs
  * asynchronous calls to the distributed storage to share information.
  * <p>
- * This it particularly usefull when using a database over the network as
+ * This it particularly useful when using a database over the network as
  * the queries are not slowed down by any external problems.
  *
  * @author Guillaume Simard
