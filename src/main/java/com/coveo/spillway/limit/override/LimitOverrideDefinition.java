@@ -20,27 +20,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway.limit;
-
-import org.junit.Test;
-
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitDefinition;
+package com.coveo.spillway.limit.override;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.function.Function;
 
-import static com.google.common.truth.Truth.assertThat;
+/**
+ * Container of properties for the {@link LimitOverride} class.
+ *
+ * @see LimitOverride
+ *
+ * @author Emile Fugulin
+ * @since 1.0.0
+ */
+public class LimitOverrideDefinition {
 
-public class LimitTest {
+  private String property;
+  private int capacity;
+  private Duration expiration;
 
-  @Test
-  public void toStringIsTheLimitDefinitionToString() {
-    LimitDefinition limitDefinition = new LimitDefinition("potato", 5, Duration.ofDays(100));
-    Limit<String> limit =
-        new Limit<>(limitDefinition, Function.identity(), new ArrayList<>(), new ArrayList<>());
+  public LimitOverrideDefinition(String property, int capacity, Duration expiration) {
+    this.property = property;
+    this.capacity = capacity;
+    this.expiration = expiration;
+  }
 
-    assertThat(limit.toString()).isEqualTo(limitDefinition.toString());
+  public String getProperty() {
+    return property;
+  }
+
+  public int getCapacity() {
+    return capacity;
+  }
+
+  public Duration getExpiration() {
+    return expiration;
+  }
+
+  @Override
+  public String toString() {
+    return property + "[" + capacity + " calls/" + expiration + "]";
   }
 }

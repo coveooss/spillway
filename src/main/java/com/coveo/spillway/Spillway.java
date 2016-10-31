@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
  *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class Spillway<T> {
@@ -68,6 +69,10 @@ public class Spillway<T> {
     this.storage = storage;
     this.resource = resourceName;
     this.limits = Collections.unmodifiableList(Arrays.asList(limits));
+  }
+
+  public List<Limit<T>> getLimits() {
+    return limits;
   }
 
   /**
@@ -134,7 +139,7 @@ public class Spillway<T> {
                         .withResource(resource)
                         .withLimitName(limit.getName())
                         .withProperty(limit.getProperty(context))
-                        .withExpiration(limit.getExpiration())
+                        .withExpiration(limit.getExpiration(context))
                         .withEventTimestamp(now)
                         .withCost(cost)
                         .build())
@@ -150,7 +155,7 @@ public class Spillway<T> {
 
         handleTriggers(context, cost, result, limit);
 
-        if (result > limit.getCapacity()) {
+        if (result > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
         }
         i++;
@@ -168,9 +173,9 @@ public class Spillway<T> {
   }
 
   private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {
-    for (LimitTrigger trigger : limit.getLimitTriggers()) {
+    for (LimitTrigger trigger : limit.getLimitTriggers(context)) {
       try {
-        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition());
+        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition(context));
       } catch (RuntimeException ex) {
         logger.warn(
             "Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);

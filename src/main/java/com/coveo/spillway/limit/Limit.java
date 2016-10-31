@@ -24,8 +24,10 @@ package com.coveo.spillway.limit;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
+import com.coveo.spillway.limit.override.LimitOverride;
 import com.coveo.spillway.trigger.LimitTrigger;
 
 /**
@@ -40,21 +42,25 @@ import com.coveo.spillway.trigger.LimitTrigger;
  * @see LimitBuilder
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class Limit<T> {
 
   private LimitDefinition definition;
   private Function<T, String> propertyExtractor;
+  private List<LimitOverride> limitOverrides;
 
   private List<LimitTrigger> limitTriggers;
 
   /*package*/ Limit(
       LimitDefinition definition,
       Function<T, String> propertyExtractor,
+      List<LimitOverride> limitOverrides,
       List<LimitTrigger> limitTriggers) {
     this.definition = definition;
     this.propertyExtractor = propertyExtractor;
+    this.limitOverrides = limitOverrides;
     this.limitTriggers = limitTriggers;
   }
 
@@ -62,8 +68,18 @@ public class Limit<T> {
     return definition;
   }
 
+  public LimitDefinition getDefinition(T context) {
+    return findLimitOverride(context)
+        .map(p -> new LimitDefinition(getName(), p.getCapacity(), p.getExpiration()))
+        .orElse(getDefinition());
+  }
+
   public List<LimitTrigger> getLimitTriggers() {
     return limitTriggers;
+  }
+
+  public List<LimitTrigger> getLimitTriggers(T context) {
+    return findLimitOverride(context).map(p -> p.getLimitTriggers()).orElse(getLimitTriggers());
   }
 
   public String getProperty(T context) {
@@ -78,12 +94,36 @@ public class Limit<T> {
     return definition.getExpiration();
   }
 
+  public Duration getExpiration(T context) {
+    return findLimitOverride(context).map(p -> p.getExpiration()).orElse(getExpiration());
+  }
+
   public int getCapacity() {
     return definition.getCapacity();
+  }
+
+  public int getCapacity(T context) {
+    return findLimitOverride(context).map(p -> p.getCapacity()).orElse(getCapacity());
+  }
+
+  public List<LimitOverride> getLimitOverrides() {
+    return limitOverrides;
   }
 
   @Override
   public String toString() {
     return definition.toString();
+  }
+
+  private Optional<LimitOverride> findLimitOverride(T context) {
+    String property = getProperty(context);
+
+    for (LimitOverride limitOverride : limitOverrides) {
+      if (limitOverride.getProperty().equals(property)) {
+        return Optional.of(limitOverride);
+      }
+    }
+
+    return Optional.empty();
   }
 }

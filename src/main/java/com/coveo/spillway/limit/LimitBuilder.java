@@ -27,13 +27,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import com.coveo.spillway.limit.override.LimitOverride;
 import com.coveo.spillway.trigger.LimitTrigger;
 import com.coveo.spillway.trigger.LimitTriggerCallback;
 import com.coveo.spillway.trigger.PercentageThresholdTrigger;
 import com.coveo.spillway.trigger.ValueThresholdTrigger;
 
 /**
- * Contains helper methods to easily create {@link com.coveo.spillway.limit.Limit}
+ * Contains helper methods to easily create {@link Limit}
  * General usage is the following :
  * <pre>
  * {@code
@@ -46,6 +47,7 @@ import com.coveo.spillway.trigger.ValueThresholdTrigger;
  * @see Limit
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class LimitBuilder<T> {
@@ -56,9 +58,14 @@ public class LimitBuilder<T> {
 
   private Function<T, String> propertyExtractor;
   private List<LimitTrigger> triggers = new ArrayList<>();
+  private List<LimitOverride> overrides = new ArrayList<>();
 
   private LimitBuilder() {}
 
+  /**
+   * @param capacity The limit capacity before it starts throttling
+   * @return The current {@link LimitBuilder}
+   */
   public LimitBuilder<T> to(int capacity) {
     this.limitCapacity = capacity;
     return this;
@@ -66,7 +73,7 @@ public class LimitBuilder<T> {
 
   /**
    * @param expiration The duration of the limit before it is reset
-   * @return The current LimitBuilder
+   * @return The current {@link LimitBuilder}
    */
   public LimitBuilder<T> per(Duration expiration) {
     this.limitExpiration = expiration;
@@ -81,7 +88,7 @@ public class LimitBuilder<T> {
    * @see PercentageThresholdTrigger
    *
    * @param limitTrigger Custom {@link LimitTrigger}
-   * @return The current LimitBuilder
+   * @return The current {@link LimitBuilder}
    */
   public LimitBuilder<T> withLimitTrigger(LimitTrigger limitTrigger) {
     this.triggers.add(limitTrigger);
@@ -92,7 +99,7 @@ public class LimitBuilder<T> {
    * Adds a call back that will be called when the specified limit (using {@link #to(int)}) is reached.
    *
    * @param limitTriggerCallback The callback {@link LimitTriggerCallback}
-   * @return The current LimitBuilder
+   * @return The current {@link LimitBuilder}
    */
   public LimitBuilder<T> withExceededCallback(LimitTriggerCallback limitTriggerCallback) {
     triggers.add(new ValueThresholdTrigger(limitCapacity, limitTriggerCallback));
@@ -100,14 +107,26 @@ public class LimitBuilder<T> {
   }
 
   /**
+   * Adds a {@link LimitOverride} to the current {@link Limit}.
+   *
+   * @param limitOverride The {@link LimitOverride}
+   * @return The current {@link LimitBuilder}
+   */
+  public LimitBuilder<T> withLimitOverride(LimitOverride limitOverride) {
+    this.overrides.add(limitOverride);
+    return this;
+  }
+
+  /**
    * When all parameters are set, call this method to get the resulting {@link Limit}
    *
-   * @return The built limit
+   * @return The built {@link Limit}
    */
   public Limit<T> build() {
     return new Limit<>(
         new LimitDefinition(limitName, limitCapacity, limitExpiration),
         propertyExtractor,
+        overrides,
         triggers);
   }
 
@@ -115,7 +134,7 @@ public class LimitBuilder<T> {
    * Begin the creation of a new limit.
    *
    * @param limitName The name of the created limit
-   * @return A new LimitBuilder
+   * @return A new {@link LimitBuilder}
    */
   public static LimitBuilder<String> of(String limitName) {
     return of(limitName, Function.identity());
@@ -129,7 +148,7 @@ public class LimitBuilder<T> {
    *
    * @param limitName The name of the created limit
    * @param propertyExtractor Function used to fetch the throttled property
-   * @return A new LimitBuilder
+   * @return A new {@link LimitBuilder}
    */
   public static <T> LimitBuilder<T> of(String limitName, Function<T, String> propertyExtractor) {
     LimitBuilder<T> limitBuilder = new LimitBuilder<>();
