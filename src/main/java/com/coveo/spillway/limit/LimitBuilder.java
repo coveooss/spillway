@@ -110,7 +110,7 @@ public class LimitBuilder<T> {
 
   /**
    * Adds a {@link LimitOverride} to the current {@link Limit}.
-   * If a {@link LimitOverride} already exists for the same property, 
+   * If a {@link LimitOverride} already exists for the same property,
    * it will be replaced by the new {@link LimitOverride}.
    *
    * @param limitOverride The {@link LimitOverride}

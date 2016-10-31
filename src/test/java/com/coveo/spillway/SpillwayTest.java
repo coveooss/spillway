@@ -465,11 +465,12 @@ public class SpillwayTest {
     assertThat(definitionCaptor.getValue().getExpiration()).isEqualTo(A_SHORT_DURATION);
     assertThat(definitionCaptor.getValue().getName()).isEqualTo(A_LIMIT_NAME);
   }
-  
+
   @Test
   public void testAddMultipleLimitOverridesForSameProperty() {
     LimitOverride override = LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_DURATION).build();
-    LimitOverride anotherOverride = LimitOverrideBuilder.of(JOHN).to(A_SMALLER_CAPACITY).per(A_DURATION).build();
+    LimitOverride anotherOverride =
+        LimitOverrideBuilder.of(JOHN).to(A_SMALLER_CAPACITY).per(A_DURATION).build();
 
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName)

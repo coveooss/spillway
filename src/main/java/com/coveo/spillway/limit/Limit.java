@@ -119,12 +119,9 @@ public class Limit<T> {
   private Optional<LimitOverride> findLimitOverride(T context) {
     String property = getProperty(context);
 
-    for (LimitOverride limitOverride : limitOverrides) {
-      if (limitOverride.getProperty().equals(property)) {
-        return Optional.of(limitOverride);
-      }
-    }
-
-    return Optional.empty();
+    return limitOverrides
+        .stream()
+        .filter(override -> override.getProperty().equals(property))
+        .findAny();
   }
 }
