@@ -71,10 +71,6 @@ public class Spillway<T> {
     this.limits = Collections.unmodifiableList(Arrays.asList(limits));
   }
 
-  public List<Limit<T>> getLimits() {
-    return limits;
-  }
-
   /**
    * Behave like {@link #call(Object, int)} with {@code cost} of one.
    *
