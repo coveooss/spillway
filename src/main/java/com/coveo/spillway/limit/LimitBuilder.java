@@ -24,7 +24,9 @@ package com.coveo.spillway.limit;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import com.coveo.spillway.limit.override.LimitOverride;
@@ -58,7 +60,7 @@ public class LimitBuilder<T> {
 
   private Function<T, String> propertyExtractor;
   private List<LimitTrigger> triggers = new ArrayList<>();
-  private List<LimitOverride> overrides = new ArrayList<>();
+  private Set<LimitOverride> overrides = new HashSet<>();
 
   private LimitBuilder() {}
 
@@ -108,11 +110,14 @@ public class LimitBuilder<T> {
 
   /**
    * Adds a {@link LimitOverride} to the current {@link Limit}.
+   * If a {@link LimitOverride} already exists for the same property, 
+   * it will be replaced by the new {@link LimitOverride}.
    *
    * @param limitOverride The {@link LimitOverride}
    * @return The current {@link LimitBuilder}
    */
   public LimitBuilder<T> withLimitOverride(LimitOverride limitOverride) {
+    this.overrides.remove(limitOverride);
     this.overrides.add(limitOverride);
     return this;
   }

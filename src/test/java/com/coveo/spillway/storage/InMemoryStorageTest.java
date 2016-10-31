@@ -65,10 +65,10 @@ public class InMemoryStorageTest {
 
   @Test
   public void expiredEntriesAreRemovedFromDebugInfo() throws InterruptedException {
-    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), Instant.now());
+    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(2), Instant.now());
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
-    Thread.sleep(2000);
+    Thread.sleep(3000);
     assertThat(storage.debugCurrentLimitCounters()).isEmpty();
   }
 }

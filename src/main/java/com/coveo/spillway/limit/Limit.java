@@ -25,6 +25,7 @@ package com.coveo.spillway.limit;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import com.coveo.spillway.limit.override.LimitOverride;
@@ -49,14 +50,14 @@ public class Limit<T> {
 
   private LimitDefinition definition;
   private Function<T, String> propertyExtractor;
-  private List<LimitOverride> limitOverrides;
+  private Set<LimitOverride> limitOverrides;
 
   private List<LimitTrigger> limitTriggers;
 
   /*package*/ Limit(
       LimitDefinition definition,
       Function<T, String> propertyExtractor,
-      List<LimitOverride> limitOverrides,
+      Set<LimitOverride> limitOverrides,
       List<LimitTrigger> limitTriggers) {
     this.definition = definition;
     this.propertyExtractor = propertyExtractor;
@@ -106,7 +107,7 @@ public class Limit<T> {
     return findLimitOverride(context).map(p -> p.getCapacity()).orElse(getCapacity());
   }
 
-  public List<LimitOverride> getLimitOverrides() {
+  public Set<LimitOverride> getLimitOverrides() {
     return limitOverrides;
   }
 

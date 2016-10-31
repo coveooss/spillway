@@ -63,6 +63,7 @@ import static org.mockito.Matchers.eq;
 public class SpillwayTest {
 
   private static final int ONE_MILLION = 1000000;
+  private static final int A_SMALLER_CAPACITY = 50;
   private static final int A_CAPACITY = 100;
   private static final int A_HIGHER_CAPACITY = 500;
   private static final Duration A_DURATION = Duration.ofHours(1);
@@ -463,5 +464,22 @@ public class SpillwayTest {
     assertThat(definitionCaptor.getValue().getCapacity()).isEqualTo(A_HIGHER_CAPACITY);
     assertThat(definitionCaptor.getValue().getExpiration()).isEqualTo(A_SHORT_DURATION);
     assertThat(definitionCaptor.getValue().getName()).isEqualTo(A_LIMIT_NAME);
+  }
+  
+  @Test
+  public void testAddMultipleLimitOverridesForSameProperty() {
+    LimitOverride override = LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_DURATION).build();
+    LimitOverride anotherOverride = LimitOverrideBuilder.of(JOHN).to(A_SMALLER_CAPACITY).per(A_DURATION).build();
+
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName)
+            .to(A_HIGHER_CAPACITY)
+            .per(A_DURATION)
+            .withLimitOverride(override)
+            .withLimitOverride(anotherOverride)
+            .build();
+
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
+    assertThat(spillway.tryCall(john, A_SMALLER_CAPACITY + 10)).isFalse();
   }
 }
