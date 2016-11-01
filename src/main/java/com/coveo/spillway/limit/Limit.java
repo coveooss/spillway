@@ -33,7 +33,7 @@ import com.coveo.spillway.trigger.LimitTrigger;
 
 /**
  * Contains all the the necessary information to enforce a limit
- * specified by the user. This also incluses the various call back
+ * specified by the user. This also includes the various call back
  * when the capacity is reached.
  * <p>
  * Should always be created using the {@link LimitBuilder}.
@@ -65,44 +65,104 @@ public class Limit<T> {
     this.limitTriggers = limitTriggers;
   }
 
+  /**
+   * Simple getter for the base {@link LimitDefinition}.
+   * 
+   * @return The base {@link LimitDefinition}
+   */
   public LimitDefinition getDefinition() {
     return definition;
   }
 
+  /**
+   * Getter for the {@link LimitDefinition} considering overrides.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return The found {@link LimitDefinition}
+   */
   public LimitDefinition getDefinition(T context) {
     return findLimitOverride(context)
         .map(p -> new LimitDefinition(getName(), p.getCapacity(), p.getExpiration()))
         .orElse(getDefinition());
   }
 
+  /**
+   * Simple getter for the base {@link LimitTrigger}s.
+   * 
+   * @return A list of the {@link LimitTrigger}s
+   */
   public List<LimitTrigger> getLimitTriggers() {
     return limitTriggers;
   }
 
+  /**
+   * Getter for the {@link LimitTrigger}s considering overrides.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return A list of the {@link LimitTrigger}s
+   */
   public List<LimitTrigger> getLimitTriggers(T context) {
     return findLimitOverride(context).map(p -> p.getLimitTriggers()).orElse(getLimitTriggers());
   }
 
+  /**
+   * Getter used to extract the property from the context.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return The found property
+   */
   public String getProperty(T context) {
     return propertyExtractor.apply(context);
   }
 
+  /**
+   * Simple getter for the {@link Limit}'s name.
+   * 
+   * @return The name of the {@link Limit}
+   */
   public String getName() {
     return definition.getName();
   }
 
+  /**
+   * Simple getter for the base limit's expiration.
+   * 
+   * @return The expiration {@link Duration} of the limit
+   */
   public Duration getExpiration() {
     return definition.getExpiration();
   }
 
+  /**
+   * Getter for the expiration {@link Duration} considering overrides.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return The found expiration {@link Duration}
+   */
   public Duration getExpiration(T context) {
     return findLimitOverride(context).map(p -> p.getExpiration()).orElse(getExpiration());
   }
 
+  /**
+   * Simple getter for the base {@link Limit}'s capacity.
+   * 
+   * @return The base capacity of the {@link Limit}
+   */
   public int getCapacity() {
     return definition.getCapacity();
   }
 
+  /**
+   * Getter for the capacity considering overrides.
+   * 
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return The found capacity
+   */
   public int getCapacity(T context) {
     return findLimitOverride(context).map(p -> p.getCapacity()).orElse(getCapacity());
   }

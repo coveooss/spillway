@@ -32,6 +32,7 @@ import com.coveo.spillway.storage.LimitUsageStorage;
  * Factory to create {@link Spillway} objects using the specified storage method.
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class SpillwayFactory {
