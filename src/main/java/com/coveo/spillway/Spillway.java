@@ -34,6 +34,7 @@ import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.trigger.LimitTrigger;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,12 +61,15 @@ public class Spillway<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(Spillway.class);
 
+  private final Clock clock;
+
   private final LimitUsageStorage storage;
   private final String resource;
   private final List<Limit<T>> limits;
 
   @SafeVarargs
-  public Spillway(LimitUsageStorage storage, String resourceName, Limit<T>... limits) {
+  public Spillway(Clock clock, LimitUsageStorage storage, String resourceName, Limit<T>... limits) {
+    this.clock = clock;
     this.storage = storage;
     this.resource = resourceName;
     this.limits = Collections.unmodifiableList(Arrays.asList(limits));
@@ -125,7 +129,7 @@ public class Spillway<T> {
   }
 
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     List<AddAndGetRequest> requests =
         limits
             .stream()

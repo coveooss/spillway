@@ -37,10 +37,13 @@ import com.coveo.spillway.trigger.ValueThresholdTrigger;
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -94,16 +97,20 @@ public class SpillwayTest {
   private User gina = new User("gina", "127.0.0.1");
 
   private LimitUsageStorage mockedStorage;
+  private Clock clock;
 
   private SpillwayFactory inMemoryFactory;
   private SpillwayFactory mockedFactory;
 
   @Before
   public void setup() {
-    inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
+    clock = mock(Clock.class);
+    inMemoryFactory = new SpillwayFactory(new InMemoryStorage(), clock);
 
     mockedStorage = mock(LimitUsageStorage.class);
     mockedFactory = new SpillwayFactory(mockedStorage);
+
+    when(clock.instant()).thenReturn(Instant.now());
   }
 
   @Test
@@ -142,6 +149,7 @@ public class SpillwayTest {
   }
 
   @Test
+  @Ignore
   public void oneMillionConcurrentRequestsWith100Threads() throws InterruptedException {
     Limit<User> ipLimit =
         LimitBuilder.of("perIp", User::getIp).to(ONE_MILLION).per(Duration.ofHours(1)).build();
@@ -245,7 +253,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void bucketChangesWhenTimePasses() throws InterruptedException {
+  public void bucketChangesWhenTimePasses() {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofSeconds(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -253,7 +261,8 @@ public class SpillwayTest {
     assertThat(spillway.tryCall(john)).isTrue();
     assertThat(spillway.tryCall(john)).isFalse();
 
-    Thread.sleep(2000); // Sleep two seconds to ensure that we bump to another bucket
+    // Fake sleep two seconds to ensure that we bump to another bucket
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
 
     assertThat(spillway.tryCall(john)).isTrue();
   }
@@ -412,7 +421,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canAddExpirationLimitOverride() throws InterruptedException {
+  public void canAddExpirationLimitOverride() {
     LimitOverride override =
         LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_SHORT_DURATION).build();
 
@@ -427,7 +436,8 @@ public class SpillwayTest {
     assertThat(spillway.tryCall(john, A_CAPACITY)).isTrue();
     assertThat(spillway.tryCall(john, 1)).isFalse();
 
-    Thread.sleep(2000);
+    // Fake sleep two seconds to ensure that we bump to another bucket
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
 
     assertThat(spillway.tryCall(john, A_CAPACITY)).isTrue();
   }
