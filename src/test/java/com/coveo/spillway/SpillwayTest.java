@@ -37,7 +37,6 @@ import com.coveo.spillway.trigger.ValueThresholdTrigger;
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -46,10 +45,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
@@ -65,7 +60,6 @@ import static org.mockito.Matchers.eq;
 
 public class SpillwayTest {
 
-  private static final int ONE_MILLION = 1000000;
   private static final int A_SMALLER_CAPACITY = 50;
   private static final int A_CAPACITY = 100;
   private static final int A_HIGHER_CAPACITY = 500;
@@ -146,32 +140,6 @@ public class SpillwayTest {
 
     assertThat(spillway.tryCall(john)).isTrue();
     assertThat(spillway.tryCall(gina)).isFalse(); // Gina is on John's IP.
-  }
-
-  @Test
-  @Ignore
-  public void oneMillionConcurrentRequestsWith100Threads() throws InterruptedException {
-    Limit<User> ipLimit =
-        LimitBuilder.of("perIp", User::getIp).to(ONE_MILLION).per(Duration.ofHours(1)).build();
-    Spillway<User> spillway = inMemoryFactory.enforce("testResource", ipLimit);
-
-    ExecutorService threadPool = Executors.newFixedThreadPool(100);
-
-    AtomicInteger counter = new AtomicInteger(0);
-    // We do ONE MILLION + 1 iterations and check to make sure that the counter was not incremented more than expected.
-    for (int i = 0; i < ONE_MILLION + 1; i++) {
-      threadPool.submit(
-          () -> {
-            boolean canCall = spillway.tryCall(john);
-            if (canCall) {
-              counter.incrementAndGet();
-            }
-          });
-    }
-    threadPool.shutdown();
-    threadPool.awaitTermination(1, TimeUnit.MINUTES);
-
-    assertThat(counter.get()).isEqualTo(ONE_MILLION);
   }
 
   @Test

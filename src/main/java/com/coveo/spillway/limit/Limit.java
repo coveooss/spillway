@@ -67,7 +67,7 @@ public class Limit<T> {
 
   /**
    * Simple getter for the base {@link LimitDefinition}.
-   * 
+   *
    * @return The base {@link LimitDefinition}
    */
   public LimitDefinition getDefinition() {
@@ -76,7 +76,7 @@ public class Limit<T> {
 
   /**
    * Getter for the {@link LimitDefinition} considering overrides.
-   * 
+   *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @return The found {@link LimitDefinition}
@@ -89,7 +89,7 @@ public class Limit<T> {
 
   /**
    * Simple getter for the base {@link LimitTrigger}s.
-   * 
+   *
    * @return A list of the {@link LimitTrigger}s
    */
   public List<LimitTrigger> getLimitTriggers() {
@@ -98,7 +98,7 @@ public class Limit<T> {
 
   /**
    * Getter for the {@link LimitTrigger}s considering overrides.
-   * 
+   *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @return A list of the {@link LimitTrigger}s
@@ -109,7 +109,7 @@ public class Limit<T> {
 
   /**
    * Getter used to extract the property from the context.
-   * 
+   *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @return The found property
@@ -120,7 +120,7 @@ public class Limit<T> {
 
   /**
    * Simple getter for the {@link Limit}'s name.
-   * 
+   *
    * @return The name of the {@link Limit}
    */
   public String getName() {
@@ -129,7 +129,7 @@ public class Limit<T> {
 
   /**
    * Simple getter for the base limit's expiration.
-   * 
+   *
    * @return The expiration {@link Duration} of the limit
    */
   public Duration getExpiration() {
@@ -138,7 +138,7 @@ public class Limit<T> {
 
   /**
    * Getter for the expiration {@link Duration} considering overrides.
-   * 
+   *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @return The found expiration {@link Duration}
@@ -149,7 +149,7 @@ public class Limit<T> {
 
   /**
    * Simple getter for the base {@link Limit}'s capacity.
-   * 
+   *
    * @return The base capacity of the {@link Limit}
    */
   public int getCapacity() {
@@ -158,7 +158,7 @@ public class Limit<T> {
 
   /**
    * Getter for the capacity considering overrides.
-   * 
+   *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @return The found capacity
