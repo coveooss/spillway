@@ -60,3 +60,16 @@ The java documentation is available here: https://coveo.github.io/spillway/
     spillway.tryCall(john); // true
     spillway.tryCall(gina); // false, perIp limit exceeded.
 ```
+
+###### Sample 3
+```java
+    LimitUsageStorage storage = new InMemoryUsage();
+    SpillwayFactory spillwayFactory = new SpillwayFactory(storage);
+    
+    LimitOverride override = LimitOverrideBuilder.of("john").to(10).per(Duration.ofHours(1)).build();
+    Limit<String> userLimit = LimitBuilder.of("perUser").to(30).per(Duration.ofHours(1)).withLimitOverride(override).build();
+    Spillway<User> spillway = spillwayFactory.enforce("myResource", userLimit);
+
+    spillway.tryCall("john", 11); // false
+    spillway.tryCall("gina", 20); // true
+```
