@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
  * can be complicated. Perfect for local usages.
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class InMemoryStorage implements LimitUsageStorage {
@@ -65,8 +66,7 @@ public class InMemoryStorage implements LimitUsageStorage {
 
         Map<LimitKey, Capacity> mapWithThisExpiration =
             map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
-        Capacity counter =
-            mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
+        Capacity counter = mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
         updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
       }
       removeExpiredEntries();
@@ -87,16 +87,14 @@ public class InMemoryStorage implements LimitUsageStorage {
     synchronized (lock) {
       for (OverrideKeyRequest override : overrides) {
         Map<LimitKey, Capacity> mapWithThisExpiration =
-            map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>()); 
-        mapWithThisExpiration.put(
-            override.getLimitKey(), new Capacity(override.getNewValue()));
+            map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>());
+        mapWithThisExpiration.put(override.getLimitKey(), new Capacity(override.getNewValue()));
       }
       removeExpiredEntries();
     }
   }
-  
-  public void applyOnEach(Consumer<Entry<Instant,Map<LimitKey, Capacity>>> action)
-  {
+
+  public void applyOnEach(Consumer<Entry<Instant, Map<LimitKey, Capacity>>> action) {
     map.entrySet().forEach(action);
   }
 

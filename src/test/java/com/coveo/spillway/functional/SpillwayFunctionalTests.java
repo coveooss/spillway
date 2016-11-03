@@ -36,8 +36,7 @@ import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServer;
 
 @Ignore("Functional tests, remove ignore to run them")
-public class SpillwayFunctionalTests
-{
+public class SpillwayFunctionalTests {
 
   private static final String RESOURCE1 = "someResource";
   private static final String LIMIT1 = "someLimit";
@@ -57,8 +56,7 @@ public class SpillwayFunctionalTests
   private static RedisStorage storage;
 
   @BeforeClass
-  public static void startRedis() throws IOException
-  {
+  public static void startRedis() throws IOException {
     try {
       redisServer = new RedisServer(6389);
     } catch (IOException e) {
@@ -71,22 +69,20 @@ public class SpillwayFunctionalTests
   }
 
   @AfterClass
-  public static void stopRedis()
-  {
+  public static void stopRedis() {
     redisServer.stop();
   }
 
   @Before
-  public void setup()
-  {
+  public void setup() {
     jedis.flushDB();
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
   }
 
   @Test
-  public void oneMillionConcurrentRequestsWith100Threads() throws InterruptedException
-  {
-    Limit<String> ipLimit = LimitBuilder.of("perIp").to(ONE_MILLION).per(Duration.ofHours(1)).build();
+  public void oneMillionConcurrentRequestsWith100Threads() throws InterruptedException {
+    Limit<String> ipLimit =
+        LimitBuilder.of("perIp").to(ONE_MILLION).per(Duration.ofHours(1)).build();
     Spillway<String> spillway = inMemoryFactory.enforce("testResource", ipLimit);
 
     ExecutorService threadPool = Executors.newFixedThreadPool(100);
@@ -94,12 +90,13 @@ public class SpillwayFunctionalTests
     AtomicInteger counter = new AtomicInteger(0);
     // We do ONE MILLION + 1 iterations and check to make sure that the counter was not incremented more than expected.
     for (int i = 0; i < ONE_MILLION + 1; i++) {
-      threadPool.submit(() -> {
-        boolean canCall = spillway.tryCall(AN_IP);
-        if (canCall) {
-          counter.incrementAndGet();
-        }
-      });
+      threadPool.submit(
+          () -> {
+            boolean canCall = spillway.tryCall(AN_IP);
+            if (canCall) {
+              counter.incrementAndGet();
+            }
+          });
     }
     threadPool.shutdown();
     threadPool.awaitTermination(1, TimeUnit.MINUTES);
@@ -108,9 +105,11 @@ public class SpillwayFunctionalTests
   }
 
   @Test
-  public void expiredKeysCompletelyDisappear() throws InterruptedException
-  {
-    int result1 = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP).getValue();
+  public void expiredKeysCompletelyDisappear() throws InterruptedException {
+    int result1 =
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .getValue();
 
     assertThat(result1).isEqualTo(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
@@ -121,8 +120,7 @@ public class SpillwayFunctionalTests
   }
 
   @Test
-  public void syncPerformance()
-  {
+  public void syncPerformance() {
     int numberOfCalls = 1000000;
     Pair<LimitKey, Integer> lastResponse = null;
     Stopwatch stopwatch = Stopwatch.createStarted();
@@ -133,21 +131,22 @@ public class SpillwayFunctionalTests
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
     logger.info("Last response: {}", lastResponse);
-    logger.info("AddAndGet {} times took {} (average of {} ms per call)",
-                numberOfCalls,
-                elapsedMs,
-                (float) elapsedMs / (float) numberOfCalls);
+    logger.info(
+        "AddAndGet {} times took {} (average of {} ms per call)",
+        numberOfCalls,
+        elapsedMs,
+        (float) elapsedMs / (float) numberOfCalls);
   }
 
   @Test
-  public void asyncPerformance() throws Exception
-  {
+  public void asyncPerformance() throws Exception {
     AsyncLimitUsageStorage asyncStorage = new AsyncLimitUsageStorage(storage);
     int numberOfCalls = 1000000;
     Pair<LimitKey, Integer> lastResponse = null;
     Stopwatch stopwatch = Stopwatch.createStarted();
     for (int i = 0; i < numberOfCalls; i++) {
-      lastResponse = asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      lastResponse =
+          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     }
     asyncStorage.shutdownStorage();
     while (!asyncStorage.isTerminated()) {
@@ -157,15 +156,15 @@ public class SpillwayFunctionalTests
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
     logger.info("Last response: {}", lastResponse);
-    logger.info("AddAndGet {} times took {} (average of {} ms per call)",
-                numberOfCalls,
-                elapsedMs,
-                (float) elapsedMs / (float) numberOfCalls);
+    logger.info(
+        "AddAndGet {} times took {} (average of {} ms per call)",
+        numberOfCalls,
+        elapsedMs,
+        (float) elapsedMs / (float) numberOfCalls);
   }
 
   @Test
-  public void asyncBatchStorageTest() throws Exception
-  {
+  public void asyncBatchStorageTest() throws Exception {
     AsyncBatchLimitUsageStorage asyncStorage = new AsyncBatchLimitUsageStorage(storage, 5000);
     int numberOfCalls = 1000000;
     for (int i = 0; i < numberOfCalls; i++) {
@@ -173,7 +172,7 @@ public class SpillwayFunctionalTests
     }
 
     Thread.sleep(5000);
-    
+
     for (int i = 0; i < numberOfCalls; i++) {
       asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     }
@@ -181,12 +180,18 @@ public class SpillwayFunctionalTests
     Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();
     Map<LimitKey, Integer> cacheCounters = asyncStorage.debugCacheLimitCounters();
 
-    currentCounters.entrySet().forEach(entry -> {
-      assertThat(entry.getValue()).isEqualTo(numberOfCalls);
-    });
-    
-    cacheCounters.entrySet().forEach(entry -> {
-      assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
-    });
+    currentCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(numberOfCalls);
+            });
+
+    cacheCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
+            });
   }
 }

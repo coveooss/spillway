@@ -24,37 +24,42 @@ package com.coveo.spillway.storage.utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Capacity
-{
+import com.coveo.spillway.limit.Limit;
+import com.coveo.spillway.storage.InMemoryStorage;
+
+/**
+ * Container of {@link AtomicInteger}s used in the {@link InMemoryStorage}
+ * to represent the current capacity of a {@link Limit}.
+ *
+ * @author Emile Fugulin
+ * @since 1.0.0
+ */
+public class Capacity {
   private AtomicInteger delta = new AtomicInteger(0);
   private AtomicInteger total = new AtomicInteger(0);
-  
+
   public Capacity() {
     this(0);
   }
-  
+
   public Capacity(int total) {
     this.delta = new AtomicInteger(0);
     this.total = new AtomicInteger(total);
   }
-  
-  public Integer addAndGet(int cost)
-  {
+
+  public Integer addAndGet(int cost) {
     return delta.addAndGet(cost) + total.get();
   }
-  
-  public Integer get()
-  {
+
+  public Integer get() {
     return delta.get() + total.get();
   }
-  
-  public Integer getDelta()
-  {
+
+  public Integer getDelta() {
     return delta.get();
   }
-  
-  public void setTotal(int cost)
-  {
+
+  public void setTotal(int cost) {
     total.set(cost);
   }
 }
