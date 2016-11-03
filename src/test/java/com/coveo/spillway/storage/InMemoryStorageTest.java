@@ -24,14 +24,21 @@ package com.coveo.spillway.storage;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import com.coveo.spillway.storage.InMemoryStorage;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class InMemoryStorageTest {
 
   private static final String RESOURCE1 = "someResource";
@@ -40,11 +47,13 @@ public class InMemoryStorageTest {
   private static final Duration EXPIRATION = Duration.ofHours(1);
   private static final Instant TIMESTAMP = Instant.now();
 
-  private InMemoryStorage storage;
+  @Mock private Clock clock;
+
+  @InjectMocks private InMemoryStorage storage;
 
   @Before
   public void setup() {
-    storage = new InMemoryStorage();
+    when(clock.instant()).thenReturn(Instant.now());
   }
 
   @Test
@@ -64,11 +73,14 @@ public class InMemoryStorageTest {
   }
 
   @Test
-  public void expiredEntriesAreRemovedFromDebugInfo() throws InterruptedException {
-    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), Instant.now());
+  public void expiredEntriesAreRemovedFromDebugInfo() {
+    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(2), Instant.now());
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
-    Thread.sleep(2000);
+
+    // Fake sleep two seconds to ensure that we bump to another bucket
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
+
     assertThat(storage.debugCurrentLimitCounters()).isEmpty();
   }
 }

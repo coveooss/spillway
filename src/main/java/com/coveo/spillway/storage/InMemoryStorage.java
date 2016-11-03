@@ -26,6 +26,7 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ public class InMemoryStorage implements LimitUsageStorage {
 
   Map<Instant, Map<LimitKey, AtomicInteger>> map = new ConcurrentHashMap<>();
   private Object lock = new Object();
+  private Clock clock = Clock.systemDefaultZone();
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
@@ -92,7 +94,7 @@ public class InMemoryStorage implements LimitUsageStorage {
   }
 
   private void removeExpiredEntries() {
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     Set<Instant> expiredDates =
         map.keySet()
             .stream()

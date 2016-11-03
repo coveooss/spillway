@@ -34,6 +34,7 @@ import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.trigger.LimitTrigger;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,18 +54,22 @@ import java.util.stream.Collectors;
  *            ({@link LimitBuilder#of(String, java.util.function.Function)}).
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class Spillway<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(Spillway.class);
 
+  private final Clock clock;
+
   private final LimitUsageStorage storage;
   private final String resource;
   private final List<Limit<T>> limits;
 
   @SafeVarargs
-  public Spillway(LimitUsageStorage storage, String resourceName, Limit<T>... limits) {
+  public Spillway(Clock clock, LimitUsageStorage storage, String resourceName, Limit<T>... limits) {
+    this.clock = clock;
     this.storage = storage;
     this.resource = resourceName;
     this.limits = Collections.unmodifiableList(Arrays.asList(limits));
@@ -124,7 +129,7 @@ public class Spillway<T> {
   }
 
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     List<AddAndGetRequest> requests =
         limits
             .stream()
@@ -134,7 +139,7 @@ public class Spillway<T> {
                         .withResource(resource)
                         .withLimitName(limit.getName())
                         .withProperty(limit.getProperty(context))
-                        .withExpiration(limit.getExpiration())
+                        .withExpiration(limit.getExpiration(context))
                         .withEventTimestamp(now)
                         .withCost(cost)
                         .build())
@@ -150,7 +155,7 @@ public class Spillway<T> {
 
         handleTriggers(context, cost, result, limit);
 
-        if (result > limit.getCapacity()) {
+        if (result > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
         }
         i++;
@@ -168,9 +173,9 @@ public class Spillway<T> {
   }
 
   private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {
-    for (LimitTrigger trigger : limit.getLimitTriggers()) {
+    for (LimitTrigger trigger : limit.getLimitTriggers(context)) {
       try {
-        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition());
+        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition(context));
       } catch (RuntimeException ex) {
         logger.warn(
             "Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);

@@ -27,6 +27,8 @@ import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.limit.override.LimitOverride;
+import com.coveo.spillway.limit.override.LimitOverrideBuilder;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
@@ -36,14 +38,13 @@ import com.google.common.collect.ImmutableMap;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
@@ -55,10 +56,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.eq;
 
 public class SpillwayTest {
 
-  private static int ONE_MILLION = 1000000;
+  private static final int A_SMALLER_CAPACITY = 50;
+  private static final int A_CAPACITY = 100;
+  private static final int A_HIGHER_CAPACITY = 500;
+  private static final Duration A_DURATION = Duration.ofHours(1);
+  private static final Duration A_SHORT_DURATION = Duration.ofSeconds(2);
+  private static final String JOHN = "john";
+  private static final String A_LIMIT_NAME = "perUser";
 
   private class User {
 
@@ -79,20 +87,24 @@ public class SpillwayTest {
     }
   }
 
-  private User john = new User("john", "127.0.0.1");
+  private User john = new User(JOHN, "127.0.0.1");
   private User gina = new User("gina", "127.0.0.1");
 
   private LimitUsageStorage mockedStorage;
+  private Clock clock;
 
   private SpillwayFactory inMemoryFactory;
   private SpillwayFactory mockedFactory;
 
   @Before
   public void setup() {
-    inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
+    clock = mock(Clock.class);
+    inMemoryFactory = new SpillwayFactory(new InMemoryStorage(), clock);
 
     mockedStorage = mock(LimitUsageStorage.class);
     mockedFactory = new SpillwayFactory(mockedStorage);
+
+    when(clock.instant()).thenReturn(Instant.now());
   }
 
   @Test
@@ -128,31 +140,6 @@ public class SpillwayTest {
 
     assertThat(spillway.tryCall(john)).isTrue();
     assertThat(spillway.tryCall(gina)).isFalse(); // Gina is on John's IP.
-  }
-
-  @Test
-  public void oneMillionConcurrentRequestsWith100Threads() throws InterruptedException {
-    Limit<User> ipLimit =
-        LimitBuilder.of("perIp", User::getIp).to(ONE_MILLION).per(Duration.ofHours(1)).build();
-    Spillway<User> spillway = inMemoryFactory.enforce("testResource", ipLimit);
-
-    ExecutorService threadPool = Executors.newFixedThreadPool(100);
-
-    AtomicInteger counter = new AtomicInteger(0);
-    // We do ONE MILLION + 1 iterations and check to make sure that the counter was not incremented more than expected.
-    for (int i = 0; i < ONE_MILLION + 1; i++) {
-      threadPool.submit(
-          () -> {
-            boolean canCall = spillway.tryCall(john);
-            if (canCall) {
-              counter.incrementAndGet();
-            }
-          });
-    }
-    threadPool.shutdown();
-    threadPool.awaitTermination(1, TimeUnit.MINUTES);
-
-    assertThat(counter.get()).isEqualTo(ONE_MILLION);
   }
 
   @Test
@@ -234,7 +221,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void bucketChangesWhenTimePasses() throws InterruptedException {
+  public void bucketChangesWhenTimePasses() {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofSeconds(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -242,7 +229,8 @@ public class SpillwayTest {
     assertThat(spillway.tryCall(john)).isTrue();
     assertThat(spillway.tryCall(john)).isFalse();
 
-    Thread.sleep(2000); // Sleep two seconds to ensure that we bump to another bucket
+    // Fake sleep two seconds to ensure that we bump to another bucket
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
 
     assertThat(spillway.tryCall(john)).isTrue();
   }
@@ -383,5 +371,94 @@ public class SpillwayTest {
     assertThat(spillway.tryCall(john, 100)).isTrue();
 
     verify(callback, never()).trigger(any(LimitDefinition.class), any());
+  }
+
+  @Test
+  public void canAddCapacityLimitOverride() {
+    LimitOverride override = LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_DURATION).build();
+
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName)
+            .to(A_HIGHER_CAPACITY)
+            .per(A_DURATION)
+            .withLimitOverride(override)
+            .build();
+
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
+    assertThat(spillway.tryCall(john, A_CAPACITY + 10)).isFalse();
+  }
+
+  @Test
+  public void canAddExpirationLimitOverride() {
+    LimitOverride override =
+        LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_SHORT_DURATION).build();
+
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName)
+            .to(A_CAPACITY)
+            .per(A_DURATION)
+            .withLimitOverride(override)
+            .build();
+
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
+    assertThat(spillway.tryCall(john, A_CAPACITY)).isTrue();
+    assertThat(spillway.tryCall(john, 1)).isFalse();
+
+    // Fake sleep two seconds to ensure that we bump to another bucket
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
+
+    assertThat(spillway.tryCall(john, A_CAPACITY)).isTrue();
+  }
+
+  @Test
+  public void canAddTriggersLimitOverride() {
+    ArgumentCaptor<LimitDefinition> definitionCaptor =
+        ArgumentCaptor.forClass(LimitDefinition.class);
+
+    LimitTriggerCallback limitCallback = mock(LimitTriggerCallback.class);
+    LimitTriggerCallback overrideCallback = mock(LimitTriggerCallback.class);
+
+    LimitOverride override =
+        LimitOverrideBuilder.of(JOHN)
+            .to(A_HIGHER_CAPACITY)
+            .per(A_SHORT_DURATION)
+            .withExceededCallback(overrideCallback)
+            .build();
+
+    Limit<User> userLimit =
+        LimitBuilder.of(A_LIMIT_NAME, User::getName)
+            .to(A_CAPACITY)
+            .per(A_DURATION)
+            .withExceededCallback(limitCallback)
+            .withLimitOverride(override)
+            .build();
+
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
+    assertThat(spillway.tryCall(john, A_HIGHER_CAPACITY + 10)).isFalse();
+
+    verify(limitCallback, never()).trigger(any(), any());
+    verify(overrideCallback).trigger(definitionCaptor.capture(), eq(john));
+
+    assertThat(definitionCaptor.getValue().getCapacity()).isEqualTo(A_HIGHER_CAPACITY);
+    assertThat(definitionCaptor.getValue().getExpiration()).isEqualTo(A_SHORT_DURATION);
+    assertThat(definitionCaptor.getValue().getName()).isEqualTo(A_LIMIT_NAME);
+  }
+
+  @Test
+  public void testAddMultipleLimitOverridesForSameProperty() {
+    LimitOverride override = LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_DURATION).build();
+    LimitOverride anotherOverride =
+        LimitOverrideBuilder.of(JOHN).to(A_SMALLER_CAPACITY).per(A_DURATION).build();
+
+    Limit<User> userLimit =
+        LimitBuilder.of("perUser", User::getName)
+            .to(A_HIGHER_CAPACITY)
+            .per(A_DURATION)
+            .withLimitOverride(override)
+            .withLimitOverride(anotherOverride)
+            .build();
+
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
+    assertThat(spillway.tryCall(john, A_SMALLER_CAPACITY + 10)).isFalse();
   }
 }

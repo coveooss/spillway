@@ -22,6 +22,8 @@
  */
 package com.coveo.spillway;
 
+import java.time.Clock;
+
 import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.storage.LimitUsageStorage;
@@ -30,13 +32,21 @@ import com.coveo.spillway.storage.LimitUsageStorage;
  * Factory to create {@link Spillway} objects using the specified storage method.
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class SpillwayFactory {
   private final LimitUsageStorage storage;
+  private final Clock clock;
 
   public SpillwayFactory(LimitUsageStorage storage) {
     this.storage = storage;
+    this.clock = Clock.systemDefaultZone();
+  }
+
+  public SpillwayFactory(LimitUsageStorage storage, Clock clock) {
+    this.storage = storage;
+    this.clock = clock;
   }
 
   /**
@@ -51,6 +61,6 @@ public class SpillwayFactory {
    */
   @SafeVarargs
   public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
-    return new Spillway<>(storage, resource, limits);
+    return new Spillway<>(clock, storage, resource, limits);
   }
 }

@@ -23,15 +23,11 @@
 package com.coveo.spillway.storage;
 
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.RedisStorage;
-import com.google.common.base.Stopwatch;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +36,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServer;
@@ -139,21 +134,6 @@ public class RedisStorageTest {
   }
 
   @Test
-  public void expiredKeysCompletelyDisappear() throws InterruptedException {
-    int result1 =
-        storage
-            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
-            .getValue();
-
-    assertThat(result1).isEqualTo(1);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
-    Thread.sleep(1000);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
-    Thread.sleep(2000);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(0);
-  }
-
-  @Test
   public void canAddLargeValues() {
     int result =
         storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
@@ -167,47 +147,5 @@ public class RedisStorageTest {
         storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
-  }
-
-  @Test
-  @Ignore("Manual test. Remove this to run it.")
-  public void syncPerformance() {
-    int numberOfCalls = 1000000;
-    Pair<LimitKey, Integer> lastResponse = null;
-    Stopwatch stopwatch = Stopwatch.createStarted();
-    for (int i = 0; i < numberOfCalls; i++) {
-      lastResponse = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
-    }
-    stopwatch.stop();
-    long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-
-    logger.info("Last response: {}", lastResponse);
-    logger.info(
-        "AddAndGet {} times took {} (average of {} ms per call)",
-        numberOfCalls,
-        elapsedMs,
-        (float) elapsedMs / (float) numberOfCalls);
-  }
-
-  @Test
-  @Ignore("Manual test. Remove this to run it.")
-  public void asyncPerformance() {
-    AsyncLimitUsageStorage asyncStorage = new AsyncLimitUsageStorage(storage);
-    int numberOfCalls = 1000000;
-    Pair<LimitKey, Integer> lastResponse = null;
-    Stopwatch stopwatch = Stopwatch.createStarted();
-    for (int i = 0; i < numberOfCalls; i++) {
-      lastResponse =
-          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
-    }
-    stopwatch.stop();
-    long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-
-    logger.info("Last response: {}", lastResponse);
-    logger.info(
-        "AddAndGet {} times took {} (average of {} ms per call)",
-        numberOfCalls,
-        elapsedMs,
-        (float) elapsedMs / (float) numberOfCalls);
   }
 }
