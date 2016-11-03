@@ -24,6 +24,7 @@ package com.coveo.spillway.storage;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
+import com.coveo.spillway.storage.utils.Capacity;
 import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
 import java.time.Clock;
@@ -32,9 +33,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +50,7 @@ import java.util.stream.Collectors;
  */
 public class InMemoryStorage implements LimitUsageStorage {
 
-  Map<Instant, Map<LimitKey, AtomicInteger>> map = new ConcurrentHashMap<>();
+  Map<Instant, Map<LimitKey, Capacity>> map = new ConcurrentHashMap<>();
   private Object lock = new Object();
   private Clock clock = Clock.systemDefaultZone();
 
@@ -61,10 +63,10 @@ public class InMemoryStorage implements LimitUsageStorage {
 
         LimitKey limitKey = LimitKey.fromRequest(request);
 
-        Map<LimitKey, AtomicInteger> mapWithThisExpiration =
+        Map<LimitKey, Capacity> mapWithThisExpiration =
             map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
-        AtomicInteger counter =
-            mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new AtomicInteger(0));
+        Capacity counter =
+            mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
         updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
       }
       removeExpiredEntries();
@@ -84,13 +86,18 @@ public class InMemoryStorage implements LimitUsageStorage {
   public void overrideKeys(List<OverrideKeyRequest> overrides) {
     synchronized (lock) {
       for (OverrideKeyRequest override : overrides) {
-        Map<LimitKey, AtomicInteger> mapWithThisExpiration =
-            map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>());
+        Map<LimitKey, Capacity> mapWithThisExpiration =
+            map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>()); 
         mapWithThisExpiration.put(
-            override.getLimitKey(), new AtomicInteger(override.getNewValue()));
+            override.getLimitKey(), new Capacity(override.getNewValue()));
       }
       removeExpiredEntries();
     }
+  }
+  
+  public void applyOnEach(Consumer<Entry<Instant,Map<LimitKey, Capacity>>> applier)
+  {
+    map.entrySet().forEach(applier);
   }
 
   private void removeExpiredEntries() {
