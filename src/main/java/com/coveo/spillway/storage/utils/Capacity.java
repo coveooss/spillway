@@ -52,4 +52,9 @@ public class Capacity
   {
     return delta.get();
   }
+  
+  public void setTotal(int cost)
+  {
+    total.set(cost);
+  }
 }

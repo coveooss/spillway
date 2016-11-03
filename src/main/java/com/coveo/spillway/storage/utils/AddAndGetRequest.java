@@ -25,8 +25,6 @@ package com.coveo.spillway.storage.utils;
 import java.time.Duration;
 import java.time.Instant;
 
-import com.coveo.spillway.limit.LimitKey;
-
 /**
  * Container of properties necessary to increase the current current value of
  * a limit in the storage and return it.
@@ -86,15 +84,6 @@ public class AddAndGetRequest {
     bucket =
         Instant.ofEpochMilli(
             (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
-  }
-  
-  private AddAndGetRequest(LimitKey limitKey, int cost)
-  {
-    resource = limitKey.getResource();
-    limitName = limitKey.getLimitName();
-    property = limitKey.getProperty();
-    bucket = limitKey.getBucket();
-    this.cost = cost;
   }
 
   /**
@@ -218,10 +207,5 @@ public class AddAndGetRequest {
         + ", bucket="
         + bucket
         + '}';
-  }
-  
-  public static AddAndGetRequest fromLimitKey(LimitKey limitKey, int cost)
-  {
-    return new AddAndGetRequest(limitKey, cost);
   }
 }

@@ -77,6 +77,14 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
     return wrappedLimitUsageStorage.debugCurrentLimitCounters();
   }
+  
+  public void shutdownStorage() {
+    executorService.shutdown();
+  }
+  
+  public boolean isTerminated() {
+    return executorService.isTerminated();
+  }
 
   public void sendAndCacheRequests(Collection<AddAndGetRequest> requests) {
     try {
