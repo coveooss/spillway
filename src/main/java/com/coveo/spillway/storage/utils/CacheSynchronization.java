@@ -42,13 +42,13 @@ import com.coveo.spillway.storage.LimitUsageStorage;
  * @author Emile Fugulin
  * @since 1.0.0
  */
-public class CacheSynchronisation extends TimerTask {
-  private static final Logger logger = LoggerFactory.getLogger(CacheSynchronisation.class);
+public class CacheSynchronization extends TimerTask {
+  private static final Logger logger = LoggerFactory.getLogger(CacheSynchronization.class);
 
   private InMemoryStorage cache;
   private LimitUsageStorage storage;
 
-  public CacheSynchronisation(InMemoryStorage cache, LimitUsageStorage storage) {
+  public CacheSynchronization(InMemoryStorage cache, LimitUsageStorage storage) {
     this.cache = cache;
     this.storage = storage;
   }

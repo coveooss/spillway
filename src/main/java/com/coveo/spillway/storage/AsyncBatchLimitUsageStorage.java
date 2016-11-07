@@ -28,7 +28,7 @@ import java.util.Timer;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
-import com.coveo.spillway.storage.utils.CacheSynchronisation;
+import com.coveo.spillway.storage.utils.CacheSynchronization;
 
 /**
  * An asynchronous implementation of {@link LimitUsageStorage}.
@@ -70,7 +70,7 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
 
     timer = new Timer();
     timer.scheduleAtFixedRate(
-        new CacheSynchronisation(cache, wrappedLimitUsageStorage),
+        new CacheSynchronization(cache, wrappedLimitUsageStorage),
         delayBeforeFirstSync,
         timeBetweenSynchronisations);
   }
