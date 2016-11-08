@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +25,7 @@ import com.coveo.spillway.SpillwayFactory;
 import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.AsyncBatchLimitUsageStorage;
 import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.RedisStorage;
@@ -130,14 +132,14 @@ public class SpillwayFunctionalTests {
 
     logger.info("Last response: {}", lastResponse);
     logger.info(
-        "AddAndGet {} times took {} (average of {} ms per call)",
+        "AddAndGet {} times took {} ms (average of {} ms per call)",
         numberOfCalls,
         elapsedMs,
         (float) elapsedMs / (float) numberOfCalls);
   }
 
   @Test
-  public void asyncPerformance() {
+  public void asyncPerformance() throws Exception {
     AsyncLimitUsageStorage asyncStorage = new AsyncLimitUsageStorage(storage);
     int numberOfCalls = 1000000;
     Pair<LimitKey, Integer> lastResponse = null;
@@ -146,14 +148,49 @@ public class SpillwayFunctionalTests {
       lastResponse =
           asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     }
+    asyncStorage.shutdownStorage();
+    asyncStorage.awaitTermination(Duration.ofMinutes(1));
     stopwatch.stop();
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
     logger.info("Last response: {}", lastResponse);
     logger.info(
-        "AddAndGet {} times took {} (average of {} ms per call)",
+        "AddAndGet {} times took {} ms (average of {} ms per call)",
         numberOfCalls,
         elapsedMs,
         (float) elapsedMs / (float) numberOfCalls);
+  }
+
+  @Test
+  public void asyncBatchStorageTest() throws Exception {
+    AsyncBatchLimitUsageStorage asyncStorage =
+        new AsyncBatchLimitUsageStorage(storage, Duration.ofSeconds(5));
+    int numberOfCalls = 1000000;
+    for (int i = 0; i < numberOfCalls; i++) {
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    }
+
+    Thread.sleep(5000);
+
+    for (int i = 0; i < numberOfCalls; i++) {
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    }
+
+    Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();
+    Map<LimitKey, Integer> cacheCounters = asyncStorage.debugCacheLimitCounters();
+
+    currentCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(numberOfCalls);
+            });
+
+    cacheCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
+            });
   }
 }
