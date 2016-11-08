@@ -132,7 +132,7 @@ public class SpillwayFunctionalTests {
 
     logger.info("Last response: {}", lastResponse);
     logger.info(
-        "AddAndGet {} times took {} (average of {} ms per call)",
+        "AddAndGet {} times took {} ms (average of {} ms per call)",
         numberOfCalls,
         elapsedMs,
         (float) elapsedMs / (float) numberOfCalls);
@@ -149,15 +149,13 @@ public class SpillwayFunctionalTests {
           asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     }
     asyncStorage.shutdownStorage();
-    while (!asyncStorage.isTerminated()) {
-      Thread.sleep(10);
-    }
+    asyncStorage.awaitTermination(Duration.ofMinutes(1));
     stopwatch.stop();
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
     logger.info("Last response: {}", lastResponse);
     logger.info(
-        "AddAndGet {} times took {} (average of {} ms per call)",
+        "AddAndGet {} times took {} ms (average of {} ms per call)",
         numberOfCalls,
         elapsedMs,
         (float) elapsedMs / (float) numberOfCalls);
