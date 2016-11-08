@@ -87,7 +87,7 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
   public void awaitTermination(Duration timeOut) throws InterruptedException {
     executorService.awaitTermination(timeOut.toMillis(), TimeUnit.MILLISECONDS);
   }
-  
+
   public boolean isTerminated() {
     return executorService.isTerminated();
   }

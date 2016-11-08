@@ -50,7 +50,7 @@ public class Capacity {
   public Integer addAndGet(int cost) {
     return delta.addAndGet(cost) + total.get();
   }
-  
+
   public Integer substractAndGet(int cost) {
     return delta.addAndGet(-cost) + total.get();
   }

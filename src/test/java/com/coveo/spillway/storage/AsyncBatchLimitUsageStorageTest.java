@@ -60,7 +60,9 @@ public class AsyncBatchLimitUsageStorageTest {
 
     List<Entry<Instant, Map<LimitKey, Integer>>> history = new LinkedList<>();
 
-    asyncStorage = new AsyncBatchLimitUsageStorage(mockedStorage, Duration.ofMillis(100), Duration.ofMillis(50));
+    asyncStorage =
+        new AsyncBatchLimitUsageStorage(
+            mockedStorage, Duration.ofMillis(100), Duration.ofMillis(50));
 
     asyncStorage.incrementAndGet(RESOURCE, LIMITNAME, PROPERTY, EXPIRATION, Instant.now());
     history.add(new SimpleImmutableEntry<>(Instant.now(), asyncStorage.debugCacheLimitCounters()));

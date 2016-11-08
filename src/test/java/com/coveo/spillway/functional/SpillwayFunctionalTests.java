@@ -163,7 +163,8 @@ public class SpillwayFunctionalTests {
 
   @Test
   public void asyncBatchStorageTest() throws Exception {
-    AsyncBatchLimitUsageStorage asyncStorage = new AsyncBatchLimitUsageStorage(storage, Duration.ofSeconds(5));
+    AsyncBatchLimitUsageStorage asyncStorage =
+        new AsyncBatchLimitUsageStorage(storage, Duration.ofSeconds(5));
     int numberOfCalls = 1000000;
     for (int i = 0; i < numberOfCalls; i++) {
       asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
