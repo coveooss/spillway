@@ -30,6 +30,7 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -83,8 +84,8 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
     executorService.shutdown();
   }
 
-  public void awaitTermination(long timeOut, TimeUnit timeUnit) throws InterruptedException {
-    executorService.awaitTermination(timeOut, timeUnit);
+  public void awaitTermination(Duration timeOut) throws InterruptedException {
+    executorService.awaitTermination(timeOut.toMillis(), TimeUnit.MILLISECONDS);
   }
   
   public boolean isTerminated() {

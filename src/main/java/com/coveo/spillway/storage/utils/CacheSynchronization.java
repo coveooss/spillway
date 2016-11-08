@@ -85,11 +85,11 @@ public class CacheSynchronization extends TimerTask {
 
                       Pair<LimitKey, Integer> reponse = storage.addAndGet(request);
 
-                      valueEntry.getValue().addAndGet(-cost);
+                      valueEntry.getValue().substractAndGet(cost);
                       valueEntry.getValue().setTotal(reponse.getValue());
                     });
           } catch (IllegalStateException e) {
-            logger.warn("Key was deleted during synchronisation, ignoring");
+            logger.warn("Key was deleted during synchronization, ignoring.");
           }
         });
   }

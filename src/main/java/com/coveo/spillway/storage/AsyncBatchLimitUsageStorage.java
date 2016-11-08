@@ -22,6 +22,7 @@
  */
 package com.coveo.spillway.storage;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Timer;
@@ -57,29 +58,27 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   private Timer timer;
 
   public AsyncBatchLimitUsageStorage(
-      LimitUsageStorage wrappedLimitUsageStorage, int timeBetweenSynchronisations) {
-    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, 0);
+      LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronisations) {
+    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, Duration.ofMillis(0));
   }
 
-  public AsyncBatchLimitUsageStorage(
+  /*package*/ AsyncBatchLimitUsageStorage(
       LimitUsageStorage wrappedLimitUsageStorage,
-      int timeBetweenSynchronisations,
-      int delayBeforeFirstSync) {
+      Duration timeBetweenSynchronisations,
+      Duration delayBeforeFirstSync) {
     this.wrappedLimitUsageStorage = wrappedLimitUsageStorage;
     this.cache = new InMemoryStorage();
 
     timer = new Timer();
-    timer.scheduleAtFixedRate(
+    timer.schedule(
         new CacheSynchronization(cache, wrappedLimitUsageStorage),
-        delayBeforeFirstSync,
-        timeBetweenSynchronisations);
+        delayBeforeFirstSync.toMillis(),
+        timeBetweenSynchronisations.toMillis());
   }
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
-    Map<LimitKey, Integer> cachedEntries = cache.addAndGet(requests);
-
-    return cachedEntries;
+    return cache.addAndGet(requests);
   }
 
   @Override
