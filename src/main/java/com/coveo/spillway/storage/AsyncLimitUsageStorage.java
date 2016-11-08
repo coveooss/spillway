@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -82,6 +83,10 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
     executorService.shutdown();
   }
 
+  public void awaitTermination(long timeOut, TimeUnit timeUnit) throws InterruptedException {
+    executorService.awaitTermination(timeOut, timeUnit);
+  }
+  
   public boolean isTerminated() {
     return executorService.isTerminated();
   }

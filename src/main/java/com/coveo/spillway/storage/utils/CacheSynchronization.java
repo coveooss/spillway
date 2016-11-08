@@ -56,7 +56,7 @@ public class CacheSynchronization extends TimerTask {
   @Override
   public void run() {
     cache.applyOnEach(
-        (instantEntry) -> {
+        instantEntry -> {
           try {
             Instant expiration = instantEntry.getKey();
 
