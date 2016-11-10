@@ -119,4 +119,10 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
       logger.warn("Failed to send and cache requests.", ex);
     }
   }
+
+  @Override
+  public void close() throws Exception
+  {
+    wrappedLimitUsageStorage.close();
+  }
 }

@@ -113,4 +113,12 @@ public interface LimitUsageStorage {
    * @return A Map of all the enforced limits and their current count
    */
   Map<LimitKey, Integer> debugCurrentLimitCounters();
+
+  /**
+   * Call this method to close the storage when done with it.
+   * This method is NOT idempotent.
+   *
+   * @throws Exception Can throw if unable to close the storage
+   */
+  void close() throws Exception;
 }
