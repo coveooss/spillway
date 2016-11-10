@@ -89,4 +89,10 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> debugCacheLimitCounters() {
     return cache.debugCurrentLimitCounters();
   }
+
+  @Override
+  public void close() throws Exception
+  {
+    wrappedLimitUsageStorage.close();
+  }
 }

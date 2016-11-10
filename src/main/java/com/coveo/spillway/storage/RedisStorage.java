@@ -23,6 +23,7 @@
 package com.coveo.spillway.storage;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
@@ -38,7 +39,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.Response;
 
 /**
@@ -55,57 +58,144 @@ import redis.clients.jedis.Response;
 public class RedisStorage implements LimitUsageStorage {
 
   private static final String KEY_SEPARATOR = "|";
+  private static final String DEFAULT_PREFIX = "spillway";
 
-  private final Jedis jedis;
+  private final JedisPool jedisPool;
   private final String keyPrefix;
 
+  public RedisStorage(URI uri) {
+    this(uri, DEFAULT_PREFIX);
+  }
+
+  public RedisStorage(URI uri, String prefix) {
+    this(uri, prefix, Protocol.DEFAULT_TIMEOUT);
+  }
+
+  public RedisStorage(URI uri, String prefix, int timeout) {
+    this(new GenericObjectPoolConfig(), uri, prefix, timeout);
+  }
+
+  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri) {
+    this(poolConfig, uri, DEFAULT_PREFIX);
+  }
+
+  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String prefix) {
+    this(poolConfig, uri, prefix, Protocol.DEFAULT_TIMEOUT);
+  }
+
+  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String prefix, int timeout) {
+    jedisPool = new JedisPool(poolConfig, uri, timeout);
+    keyPrefix = prefix;
+  }
+
   public RedisStorage(String host) {
-    this(new Jedis(host));
+    this(host, Protocol.DEFAULT_PORT);
   }
 
   public RedisStorage(String host, int port) {
-    this(new Jedis(host, port));
+    this(host, port, DEFAULT_PREFIX);
   }
 
-  public RedisStorage(URI uri) {
-    this(new Jedis(uri));
+  public RedisStorage(String host, int port, String prefix) {
+    this(new GenericObjectPoolConfig(), host, port, prefix);
   }
 
+  public RedisStorage(GenericObjectPoolConfig poolConfig, String host) {
+    this(poolConfig, host, Protocol.DEFAULT_PORT);
+  }
+
+  public RedisStorage(GenericObjectPoolConfig poolConfig, String host, int port) {
+    this(poolConfig, host, port, DEFAULT_PREFIX);
+  }
+
+  public RedisStorage(GenericObjectPoolConfig poolConfig, String host, int port, String prefix) {
+    this(poolConfig, host, port, prefix, Protocol.DEFAULT_TIMEOUT);
+  }
+
+  public RedisStorage(
+      GenericObjectPoolConfig poolConfig, String host, int port, String prefix, int timeout) {
+    jedisPool = new JedisPool(poolConfig, host, port, timeout);
+    keyPrefix = prefix;
+  }
+
+  public RedisStorage(
+      GenericObjectPoolConfig poolConfig,
+      String host,
+      int port,
+      String prefix,
+      int timeout,
+      String password) {
+    this(poolConfig, host, port, prefix, timeout, password, Protocol.DEFAULT_DATABASE);
+  }
+
+  public RedisStorage(
+      GenericObjectPoolConfig poolConfig,
+      String host,
+      int port,
+      String prefix,
+      int timeout,
+      String password,
+      int database) {
+    jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
+    keyPrefix = prefix;
+  }
+
+  /**
+   * Will be remove in V1.2.0
+   *
+   * @param jedis A Jedis connection
+   */
+  @Deprecated
   public RedisStorage(Jedis jedis) {
-    this(jedis, "spillway");
+    this(jedis, DEFAULT_PREFIX);
   }
 
+  /**
+   * Will be remove in V1.2.0
+   *
+   * @param jedis A Jedis connection
+   * @param prefix Key Prefix
+   */
+  @Deprecated
   public RedisStorage(Jedis jedis, String prefix) {
-    this.jedis = jedis;
-    this.keyPrefix = prefix;
+    this(
+        new GenericObjectPoolConfig(),
+        jedis.getClient().getHost(),
+        jedis.getClient().getPort(),
+        prefix,
+        jedis.getClient().getConnectionTimeout());
   }
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
-    Pipeline pipeline = jedis.pipelined();
-
     Map<LimitKey, Response<Long>> responses = new LinkedHashMap<>();
-    for (AddAndGetRequest request : requests) {
-      pipeline.multi();
-      LimitKey limitKey = LimitKey.fromRequest(request);
-      String redisKey =
-          Stream.of(
-                  keyPrefix,
-                  limitKey.getResource(),
-                  limitKey.getLimitName(),
-                  limitKey.getProperty(),
-                  limitKey.getBucket().toString())
-              .map(RedisStorage::clean)
-              .collect(Collectors.joining(KEY_SEPARATOR));
 
-      responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
-      // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-      // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-      pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
-      pipeline.exec();
+    try (Jedis jedis = jedisPool.getResource()) {
+      Pipeline pipeline = jedis.pipelined();
+
+      for (AddAndGetRequest request : requests) {
+        pipeline.multi();
+        LimitKey limitKey = LimitKey.fromRequest(request);
+        String redisKey =
+            Stream.of(
+                    keyPrefix,
+                    limitKey.getResource(),
+                    limitKey.getLimitName(),
+                    limitKey.getProperty(),
+                    limitKey.getBucket().toString())
+                .map(RedisStorage::clean)
+                .collect(Collectors.joining(KEY_SEPARATOR));
+
+        responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
+        // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
+        // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
+        pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
+        pipeline.exec();
+      }
+
+      pipeline.sync();
     }
 
-    pipeline.sync();
     return responses
         .entrySet()
         .stream()
@@ -116,22 +206,29 @@ public class RedisStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
     Map<LimitKey, Integer> counters = new HashMap<>();
 
-    Set<String> keys = jedis.keys(keyPrefix + KEY_SEPARATOR + "*");
-    for (String key : keys) {
-      int value = Integer.parseInt(jedis.get(key));
+    try (Jedis jedis = jedisPool.getResource()) {
+      Set<String> keys = jedis.keys(keyPrefix + KEY_SEPARATOR + "*");
+      for (String key : keys) {
+        int value = Integer.parseInt(jedis.get(key));
 
-      String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
+        String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
 
-      counters.put(
-          new LimitKey(
-              keyComponents[1],
-              keyComponents[2],
-              keyComponents[3],
-              Instant.parse(keyComponents[4])),
-          value);
+        counters.put(
+            new LimitKey(
+                keyComponents[1],
+                keyComponents[2],
+                keyComponents[3],
+                Instant.parse(keyComponents[4])),
+            value);
+      }
     }
 
     return counters;
+  }
+
+  @Override
+  public void close() {
+    jedisPool.destroy();
   }
 
   private static final String clean(String keyComponent) {
