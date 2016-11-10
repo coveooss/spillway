@@ -140,22 +140,11 @@ public class RedisStorage implements LimitUsageStorage {
     keyPrefix = prefix;
   }
 
-  /**
-   * Will be remove in V1.2.0
-   *
-   * @param jedis A Jedis connection
-   */
   @Deprecated
   public RedisStorage(Jedis jedis) {
     this(jedis, DEFAULT_PREFIX);
   }
 
-  /**
-   * Will be remove in V1.2.0
-   *
-   * @param jedis A Jedis connection
-   * @param prefix Key Prefix
-   */
   @Deprecated
   public RedisStorage(Jedis jedis, String prefix) {
     this(
