@@ -91,8 +91,7 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   }
 
   @Override
-  public void close() throws Exception
-  {
+  public void close() throws Exception {
     wrappedLimitUsageStorage.close();
   }
 }
