@@ -82,11 +82,9 @@ public class InMemoryStorage implements LimitUsageStorage {
         .flatMap(m -> m.entrySet().stream())
         .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
   }
-  
+
   @Override
-  public void close()
-  {
-  }
+  public void close() {}
 
   public void overrideKeys(List<OverrideKeyRequest> overrides) {
     synchronized (lock) {

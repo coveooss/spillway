@@ -121,8 +121,7 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
   }
 
   @Override
-  public void close() throws Exception
-  {
+  public void close() throws Exception {
     wrappedLimitUsageStorage.close();
   }
 }
