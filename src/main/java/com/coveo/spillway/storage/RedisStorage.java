@@ -48,11 +48,13 @@ import redis.clients.jedis.Response;
  * Implementation of {@link LimitUsageStorage} using a Redis storage.
  * <p>
  * Uses a {@link Jedis} client to communicate with the database.
+ * It will automatically reconnect to the Redis server in case of connection lost.
  * <p>
- * We suggest to wrap this storage in the {@link AsyncLimitUsageStorage}
+ * We suggest to wrap this storage in the {@link AsyncBatchLimitUsageStorage}
  * to avoid slowing down queries if external troubles occurs with the database.
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class RedisStorage implements LimitUsageStorage {
