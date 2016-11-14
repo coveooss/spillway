@@ -1,4 +1,4 @@
-package com.coveo.spillway.storage;
+package com.coveo.spillway.storage.sliding;
 
 import static com.google.common.truth.Truth.*;
 import static org.mockito.Mockito.*;
@@ -13,6 +13,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import com.coveo.spillway.storage.sliding.InMemorySlidingStorage;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InMemorySlidingStorageTest {

@@ -1,4 +1,4 @@
-package com.coveo.spillway.storage;
+package com.coveo.spillway.storage.sliding;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -8,10 +8,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.InMemoryStorage;
+import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.Capacity;
 
@@ -28,7 +32,7 @@ import com.coveo.spillway.storage.utils.Capacity;
  * @author Emile Fugulin
  * @since 1.1.0
  */
-public class InMemorySlidingStorage implements LimitUsageStorage {
+public class InMemorySlidingStorage implements SlidingLimitUsageStorage {
   private Map<Instant, Map<LimitKey, Capacity>> map = new ConcurrentHashMap<>();
   private Clock clock = Clock.systemDefaultZone();
   private Duration retention;
@@ -45,6 +49,16 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
   public InMemorySlidingStorage(Duration retention, Duration slideSize) {
     this.retention = retention;
     this.slideSize = slideSize;
+  }
+  
+  @Override
+  public Duration getRetention() {
+    return retention;
+  }
+  
+  @Override
+  public Duration getSlideSize() {
+    return slideSize;
   }
 
   @Override
@@ -83,6 +97,11 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
   @Override
   public void close() throws Exception {}
 
+  public void applyOnEach(Consumer<Entry<Instant, Map<LimitKey, Capacity>>> action) {
+    map.entrySet().forEach(action);
+    removeExpiredEntries();
+  }
+  
   private void removeExpiredEntries() {
     Instant oldest = Instant.now(clock).minus(retention);
     Set<Instant> expiredEntries =
