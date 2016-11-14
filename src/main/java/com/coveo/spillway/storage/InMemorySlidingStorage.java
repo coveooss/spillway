@@ -99,9 +99,6 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
         .filter(entry -> entry.getKey().compareTo(oldestBucket) > 0)
         .flatMap(entry -> entry.getValue().entrySet().stream())
         .filter(entry -> limitKeysEquals(entry.getKey(), limitKey))
-        .peek(
-            entry2
-                -> System.out.println(entry2.getKey().toString() + " : " + entry2.getValue().get()))
         .map(entry -> entry.getValue().get())
         .mapToInt(Integer::intValue)
         .sum();
