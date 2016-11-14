@@ -106,8 +106,8 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
 
   // Necessary since the equals method of the LimitKey checks the bucket and we don't care about it
   private boolean limitKeysEquals(LimitKey first, LimitKey second) {
-    return first.getResource() == second.getResource()
-        && first.getLimitName() == second.getLimitName()
-        && first.getProperty() == second.getProperty();
+    return first.getResource().equals(second.getResource())
+        && first.getLimitName().equals(second.getLimitName())
+        && first.getProperty().equals(second.getProperty());
   }
 }
