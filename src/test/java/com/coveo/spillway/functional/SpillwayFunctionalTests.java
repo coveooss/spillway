@@ -30,6 +30,8 @@ import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.RedisStorage;
 import com.coveo.spillway.storage.RedisStorageTest;
+import com.coveo.spillway.storage.sliding.AsyncSlidingLimitUsageStorage;
+import com.coveo.spillway.storage.sliding.RedisSlidingStorage;
 import com.google.common.base.Stopwatch;
 
 import redis.clients.jedis.Jedis;
@@ -186,6 +188,44 @@ public class SpillwayFunctionalTests {
               assertThat(entry.getValue()).isEqualTo(numberOfCalls);
             });
 
+    cacheCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
+            });
+  }
+
+  @Test
+  public void asyncSlidingStorageTest() throws Exception {
+    AsyncSlidingLimitUsageStorage asyncStorage =
+        new AsyncSlidingLimitUsageStorage(
+            new RedisSlidingStorage(
+                "localhost", 6389, Duration.ofMinutes(10), Duration.ofSeconds(1)),
+            Duration.ofSeconds(5));
+    int numberOfCalls = 1000000;
+    for (int i = 0; i < numberOfCalls; i++) {
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    }
+
+    Thread.sleep(5000);
+
+    for (int i = 0; i < numberOfCalls; i++) {
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    }
+
+    Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();
+    Map<LimitKey, Integer> cacheCounters = asyncStorage.debugCacheLimitCounters();
+
+    assertThat(currentCounters).isNotEmpty();
+    currentCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(numberOfCalls);
+            });
+
+    assertThat(cacheCounters).isNotEmpty();
     cacheCounters
         .entrySet()
         .forEach(

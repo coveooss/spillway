@@ -15,12 +15,11 @@ import java.util.stream.Collectors;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.InMemoryStorage;
-import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.Capacity;
 
 /**
- * Implementation of {@link LimitUsageStorage} using memory.
+ * Implementation of {@link SlidingLimitUsageStorage} using memory.
  * <p>
  * Not recommended as a distributed storage solution since sharing memory
  * can be complicated. Perfect for local usages.
@@ -28,6 +27,7 @@ import com.coveo.spillway.storage.utils.Capacity;
  * The difference with {@link InMemoryStorage} is that instead of fixed time
  * buckets, this implementation uses a sliding window of time and counts
  * the number of requests made in that window.
+ * This implementation CANNOT be used as wrapped storage for {@link AsyncSlidingLimitUsageStorage}.
  *
  * @author Emile Fugulin
  * @since 1.1.0
@@ -50,12 +50,12 @@ public class InMemorySlidingStorage implements SlidingLimitUsageStorage {
     this.retention = retention;
     this.slideSize = slideSize;
   }
-  
+
   @Override
   public Duration getRetention() {
     return retention;
   }
-  
+
   @Override
   public Duration getSlideSize() {
     return slideSize;
@@ -72,6 +72,7 @@ public class InMemorySlidingStorage implements SlidingLimitUsageStorage {
                   * slideSize.toMillis());
 
       LimitKey limitKey = LimitKey.fromRequest(request);
+      limitKey.setBucket(bucket);
 
       Map<LimitKey, Capacity> mapWithThisExpiration =
           map.computeIfAbsent(bucket, (key) -> new HashMap<>());
@@ -101,7 +102,7 @@ public class InMemorySlidingStorage implements SlidingLimitUsageStorage {
     map.entrySet().forEach(action);
     removeExpiredEntries();
   }
-  
+
   private void removeExpiredEntries() {
     Instant oldest = Instant.now(clock).minus(retention);
     Set<Instant> expiredEntries =

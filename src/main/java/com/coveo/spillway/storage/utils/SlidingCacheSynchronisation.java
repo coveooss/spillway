@@ -9,18 +9,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.sliding.AsyncSlidingLimitUsageStorage;
 import com.coveo.spillway.storage.sliding.InMemorySlidingStorage;
 import com.coveo.spillway.storage.sliding.SlidingLimitUsageStorage;
 
-public class SlidingCacheSynchronisation extends TimerTask
-{
+/**
+ * Synchronization {@link TimerTask} that is launched periodically
+ * by the {@link AsyncSlidingLimitUsageStorage}.
+ *
+ * @author Emile Fugulin
+ * @since 1.1.0
+ */
+public class SlidingCacheSynchronisation extends TimerTask {
   private static final Logger logger = LoggerFactory.getLogger(CacheSynchronization.class);
 
   private InMemorySlidingStorage cache;
   private SlidingLimitUsageStorage storage;
   private Duration durationToSync;
 
-  public SlidingCacheSynchronisation(InMemorySlidingStorage cache, SlidingLimitUsageStorage storage, Duration durationToSync) {
+  public SlidingCacheSynchronisation(
+      InMemorySlidingStorage cache, SlidingLimitUsageStorage storage, Duration durationToSync) {
     this.cache = cache;
     this.storage = storage;
     this.durationToSync = durationToSync;
@@ -29,13 +37,13 @@ public class SlidingCacheSynchronisation extends TimerTask
   @Override
   public void run() {
     Instant oldestKey = Instant.now().minus(durationToSync);
-    
+
     cache.applyOnEach(
         instantEntry -> {
           try {
             Instant bucket = instantEntry.getKey();
-            
-            if(bucket.isBefore(oldestKey)) {
+
+            if (bucket.isBefore(oldestKey)) {
               return;
             }
 
@@ -47,10 +55,6 @@ public class SlidingCacheSynchronisation extends TimerTask
                       int cost = valueEntry.getValue().getDelta();
 
                       LimitKey limitKey = valueEntry.getKey();
-
-                      Duration duration =
-                          Duration.ofMillis(
-                              bucket.toEpochMilli() - limitKey.getBucket().toEpochMilli());
 
                       AddAndGetRequest request =
                           new AddAndGetRequest.Builder()
