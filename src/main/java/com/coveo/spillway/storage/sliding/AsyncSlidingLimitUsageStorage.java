@@ -53,30 +53,31 @@ import com.coveo.spillway.storage.utils.SlidingCacheSynchronisation;
  * @since 1.1.0
  */
 public class AsyncSlidingLimitUsageStorage implements LimitUsageStorage {
-  private final SlidingLimitUsageStorage wrappedLimitUsageStorage;
+  private final LimitUsageStorage wrappedLimitUsageStorage;
   private InMemorySlidingStorage cache;
   private Timer timer;
 
   public AsyncSlidingLimitUsageStorage(
-      SlidingLimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronisations) {
-    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, Duration.ofMillis(0));
+      LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronisations, Duration cacheRetentionTime, Duration cacheSlideSize) {
+    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, Duration.ofMillis(0), cacheRetentionTime, cacheSlideSize);
   }
 
   /*package*/ AsyncSlidingLimitUsageStorage(
-      SlidingLimitUsageStorage wrappedLimitUsageStorage,
+      LimitUsageStorage wrappedLimitUsageStorage,
       Duration timeBetweenSynchronisations,
-      Duration delayBeforeFirstSync) {
+      Duration delayBeforeFirstSync, 
+      Duration cacheRetentionTime, 
+      Duration cacheSlideSize) {
     this.wrappedLimitUsageStorage = wrappedLimitUsageStorage;
     this.cache =
-        new InMemorySlidingStorage(
-            wrappedLimitUsageStorage.getRetention(), wrappedLimitUsageStorage.getSlideSize());
+        new InMemorySlidingStorage(cacheRetentionTime, cacheSlideSize);
 
     timer = new Timer();
     timer.schedule(
         new SlidingCacheSynchronisation(
             cache,
             wrappedLimitUsageStorage,
-            wrappedLimitUsageStorage.getSlideSize().plus(timeBetweenSynchronisations)),
+            cacheSlideSize.plus(timeBetweenSynchronisations)),
         delayBeforeFirstSync.toMillis(),
         timeBetweenSynchronisations.toMillis());
   }

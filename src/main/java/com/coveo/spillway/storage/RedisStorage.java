@@ -29,6 +29,7 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -64,30 +65,36 @@ public class RedisStorage implements LimitUsageStorage {
 
   private final JedisPool jedisPool;
   private final String keyPrefix;
+  private final Duration keyDuration;
 
   public RedisStorage(URI uri) {
     this(uri, DEFAULT_PREFIX);
   }
 
-  public RedisStorage(URI uri, String prefix) {
-    this(uri, prefix, Protocol.DEFAULT_TIMEOUT);
+  public RedisStorage(URI uri, String keyPrefix) {
+    this(uri, keyPrefix, Protocol.DEFAULT_TIMEOUT);
   }
 
-  public RedisStorage(URI uri, String prefix, int timeout) {
-    this(new GenericObjectPoolConfig(), uri, prefix, timeout);
+  public RedisStorage(URI uri, String keyPrefix, int timeout) {
+    this(new GenericObjectPoolConfig(), uri, keyPrefix, timeout);
   }
 
   public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri) {
     this(poolConfig, uri, DEFAULT_PREFIX);
   }
 
-  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String prefix) {
-    this(poolConfig, uri, prefix, Protocol.DEFAULT_TIMEOUT);
+  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String keyPrefix) {
+    this(poolConfig, uri, keyPrefix, Protocol.DEFAULT_TIMEOUT);
   }
 
-  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String prefix, int timeout) {
-    jedisPool = new JedisPool(poolConfig, uri, timeout);
-    keyPrefix = prefix;
+  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String keyPrefix, int timeout) {
+    this(poolConfig, uri, keyPrefix, timeout, Duration.ZERO);
+  }
+  
+  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String keyPrefix, int timeout, Duration keyDuration) {
+    this.jedisPool = new JedisPool(poolConfig, uri, timeout);
+    this.keyPrefix = keyPrefix;
+    this.keyDuration = keyDuration;
   }
 
   public RedisStorage(String host) {
@@ -98,8 +105,8 @@ public class RedisStorage implements LimitUsageStorage {
     this(host, port, DEFAULT_PREFIX);
   }
 
-  public RedisStorage(String host, int port, String prefix) {
-    this(new GenericObjectPoolConfig(), host, port, prefix);
+  public RedisStorage(String host, int port, String keyPrefix) {
+    this(new GenericObjectPoolConfig(), host, port, keyPrefix);
   }
 
   public RedisStorage(GenericObjectPoolConfig poolConfig, String host) {
@@ -110,37 +117,56 @@ public class RedisStorage implements LimitUsageStorage {
     this(poolConfig, host, port, DEFAULT_PREFIX);
   }
 
-  public RedisStorage(GenericObjectPoolConfig poolConfig, String host, int port, String prefix) {
-    this(poolConfig, host, port, prefix, Protocol.DEFAULT_TIMEOUT);
+  public RedisStorage(GenericObjectPoolConfig poolConfig, String host, int port, String keyPrefix) {
+    this(poolConfig, host, port, keyPrefix, Protocol.DEFAULT_TIMEOUT);
   }
 
   public RedisStorage(
-      GenericObjectPoolConfig poolConfig, String host, int port, String prefix, int timeout) {
-    jedisPool = new JedisPool(poolConfig, host, port, timeout);
-    keyPrefix = prefix;
+      GenericObjectPoolConfig poolConfig, String host, int port, String keyPrefix, int timeout) {
+    this(poolConfig, host, port, keyPrefix, timeout, Duration.ZERO);
+  }
+  
+  public RedisStorage(
+                      GenericObjectPoolConfig poolConfig, String host, int port, String keyPrefix, int timeout, Duration keyDuration) {
+    this.jedisPool = new JedisPool(poolConfig, host, port, timeout);
+    this.keyPrefix = keyPrefix;
+    this.keyDuration = keyDuration;
   }
 
   public RedisStorage(
       GenericObjectPoolConfig poolConfig,
       String host,
       int port,
-      String prefix,
+      String keyPrefix,
       int timeout,
       String password) {
-    this(poolConfig, host, port, prefix, timeout, password, Protocol.DEFAULT_DATABASE);
+    this(poolConfig, host, port, keyPrefix, timeout, password, Protocol.DEFAULT_DATABASE);
   }
 
   public RedisStorage(
       GenericObjectPoolConfig poolConfig,
       String host,
       int port,
-      String prefix,
+      String keyPrefix,
       int timeout,
       String password,
       int database) {
-    jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
-    keyPrefix = prefix;
+    this(poolConfig, host, port, keyPrefix, timeout, password, database, Duration.ZERO);
   }
+  
+  public RedisStorage(
+                      GenericObjectPoolConfig poolConfig,
+                      String host,
+                      int port,
+                      String keyPrefix,
+                      int timeout,
+                      String password,
+                      int database,
+                      Duration keyDuration) {
+                    this.jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
+                    this.keyPrefix = keyPrefix;
+                    this.keyDuration = keyDuration;
+                  }
 
   @Deprecated
   public RedisStorage(Jedis jedis) {
@@ -148,12 +174,12 @@ public class RedisStorage implements LimitUsageStorage {
   }
 
   @Deprecated
-  public RedisStorage(Jedis jedis, String prefix) {
+  public RedisStorage(Jedis jedis, String keyPrefix) {
     this(
         new GenericObjectPoolConfig(),
         jedis.getClient().getHost(),
         jedis.getClient().getPort(),
-        prefix,
+        keyPrefix,
         jedis.getClient().getConnectionTimeout());
   }
 
@@ -178,9 +204,16 @@ public class RedisStorage implements LimitUsageStorage {
                 .collect(Collectors.joining(KEY_SEPARATOR));
 
         responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
-        // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-        // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-        pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
+        
+        // We set the expire to the given value or twice the expiration period if not defined. The expiration is there to ensure that 
+        // we don't fill the Redis cluster with useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
+        int expiration = (int) keyDuration.getSeconds();
+        
+        if(expiration == 0) {
+          expiration = (int) request.getExpiration().getSeconds() * 2;
+        }
+        
+        pipeline.expire(redisKey, expiration);
         pipeline.exec();
       }
 

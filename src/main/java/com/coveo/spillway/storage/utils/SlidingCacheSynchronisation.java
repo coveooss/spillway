@@ -31,9 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.sliding.AsyncSlidingLimitUsageStorage;
 import com.coveo.spillway.storage.sliding.InMemorySlidingStorage;
-import com.coveo.spillway.storage.sliding.SlidingLimitUsageStorage;
 
 /**
  * Synchronization {@link TimerTask} that is launched periodically
@@ -46,11 +46,11 @@ public class SlidingCacheSynchronisation extends TimerTask {
   private static final Logger logger = LoggerFactory.getLogger(CacheSynchronization.class);
 
   private InMemorySlidingStorage cache;
-  private SlidingLimitUsageStorage storage;
+  private LimitUsageStorage storage;
   private Duration durationToSync;
 
   public SlidingCacheSynchronisation(
-      InMemorySlidingStorage cache, SlidingLimitUsageStorage storage, Duration durationToSync) {
+      InMemorySlidingStorage cache, LimitUsageStorage storage, Duration durationToSync) {
     this.cache = cache;
     this.storage = storage;
     this.durationToSync = durationToSync;
@@ -59,15 +59,22 @@ public class SlidingCacheSynchronisation extends TimerTask {
   @Override
   public void run() {
     Instant oldestKey = Instant.now().minus(durationToSync);
+    
+    System.out.println("Now    : " + Instant.now().toEpochMilli());
+    System.out.println("Oldest : " + oldestKey.toEpochMilli());
 
     cache.applyOnEach(
         instantEntry -> {
           try {
             Instant bucket = instantEntry.getKey();
 
+            System.out.println("Current: " + bucket.toEpochMilli());
+            
             if (bucket.isBefore(oldestKey)) {
               return;
             }
+            
+            System.out.println("Sync");
 
             instantEntry
                 .getValue()

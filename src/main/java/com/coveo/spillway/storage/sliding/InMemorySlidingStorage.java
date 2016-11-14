@@ -37,11 +37,12 @@ import java.util.stream.Collectors;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.InMemoryStorage;
+import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.Capacity;
 
 /**
- * Implementation of {@link SlidingLimitUsageStorage} using memory.
+ * Implementation of {@link LimitUsageStorage} using memory.
  * <p>
  * Not recommended as a distributed storage solution since sharing memory
  * can be complicated. Perfect for local usages.
@@ -54,7 +55,7 @@ import com.coveo.spillway.storage.utils.Capacity;
  * @author Emile Fugulin
  * @since 1.1.0
  */
-public class InMemorySlidingStorage implements SlidingLimitUsageStorage {
+public class InMemorySlidingStorage implements LimitUsageStorage {
   private Map<Instant, Map<LimitKey, Capacity>> map = new ConcurrentHashMap<>();
   private Clock clock = Clock.systemDefaultZone();
   private Duration retention;
@@ -73,12 +74,6 @@ public class InMemorySlidingStorage implements SlidingLimitUsageStorage {
     this.slideSize = slideSize;
   }
 
-  @Override
-  public Duration getRetention() {
-    return retention;
-  }
-
-  @Override
   public Duration getSlideSize() {
     return slideSize;
   }
