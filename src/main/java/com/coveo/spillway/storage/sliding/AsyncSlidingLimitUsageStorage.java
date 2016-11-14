@@ -58,26 +58,31 @@ public class AsyncSlidingLimitUsageStorage implements LimitUsageStorage {
   private Timer timer;
 
   public AsyncSlidingLimitUsageStorage(
-      LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronisations, Duration cacheRetentionTime, Duration cacheSlideSize) {
-    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, Duration.ofMillis(0), cacheRetentionTime, cacheSlideSize);
+      LimitUsageStorage wrappedLimitUsageStorage,
+      Duration timeBetweenSynchronisations,
+      Duration cacheRetentionTime,
+      Duration cacheSlideSize) {
+    this(
+        wrappedLimitUsageStorage,
+        timeBetweenSynchronisations,
+        Duration.ofMillis(0),
+        cacheRetentionTime,
+        cacheSlideSize);
   }
 
   /*package*/ AsyncSlidingLimitUsageStorage(
       LimitUsageStorage wrappedLimitUsageStorage,
       Duration timeBetweenSynchronisations,
-      Duration delayBeforeFirstSync, 
-      Duration cacheRetentionTime, 
+      Duration delayBeforeFirstSync,
+      Duration cacheRetentionTime,
       Duration cacheSlideSize) {
     this.wrappedLimitUsageStorage = wrappedLimitUsageStorage;
-    this.cache =
-        new InMemorySlidingStorage(cacheRetentionTime, cacheSlideSize);
+    this.cache = new InMemorySlidingStorage(cacheRetentionTime, cacheSlideSize);
 
     timer = new Timer();
     timer.schedule(
         new SlidingCacheSynchronisation(
-            cache,
-            wrappedLimitUsageStorage,
-            cacheSlideSize.plus(timeBetweenSynchronisations)),
+            cache, wrappedLimitUsageStorage, cacheSlideSize.plus(timeBetweenSynchronisations)),
         delayBeforeFirstSync.toMillis(),
         timeBetweenSynchronisations.toMillis());
   }

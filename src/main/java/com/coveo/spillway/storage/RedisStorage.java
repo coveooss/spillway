@@ -90,8 +90,13 @@ public class RedisStorage implements LimitUsageStorage {
   public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String keyPrefix, int timeout) {
     this(poolConfig, uri, keyPrefix, timeout, Duration.ZERO);
   }
-  
-  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String keyPrefix, int timeout, Duration keyDuration) {
+
+  public RedisStorage(
+      GenericObjectPoolConfig poolConfig,
+      URI uri,
+      String keyPrefix,
+      int timeout,
+      Duration keyDuration) {
     this.jedisPool = new JedisPool(poolConfig, uri, timeout);
     this.keyPrefix = keyPrefix;
     this.keyDuration = keyDuration;
@@ -125,9 +130,14 @@ public class RedisStorage implements LimitUsageStorage {
       GenericObjectPoolConfig poolConfig, String host, int port, String keyPrefix, int timeout) {
     this(poolConfig, host, port, keyPrefix, timeout, Duration.ZERO);
   }
-  
+
   public RedisStorage(
-                      GenericObjectPoolConfig poolConfig, String host, int port, String keyPrefix, int timeout, Duration keyDuration) {
+      GenericObjectPoolConfig poolConfig,
+      String host,
+      int port,
+      String keyPrefix,
+      int timeout,
+      Duration keyDuration) {
     this.jedisPool = new JedisPool(poolConfig, host, port, timeout);
     this.keyPrefix = keyPrefix;
     this.keyDuration = keyDuration;
@@ -153,20 +163,20 @@ public class RedisStorage implements LimitUsageStorage {
       int database) {
     this(poolConfig, host, port, keyPrefix, timeout, password, database, Duration.ZERO);
   }
-  
+
   public RedisStorage(
-                      GenericObjectPoolConfig poolConfig,
-                      String host,
-                      int port,
-                      String keyPrefix,
-                      int timeout,
-                      String password,
-                      int database,
-                      Duration keyDuration) {
-                    this.jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
-                    this.keyPrefix = keyPrefix;
-                    this.keyDuration = keyDuration;
-                  }
+      GenericObjectPoolConfig poolConfig,
+      String host,
+      int port,
+      String keyPrefix,
+      int timeout,
+      String password,
+      int database,
+      Duration keyDuration) {
+    this.jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
+    this.keyPrefix = keyPrefix;
+    this.keyDuration = keyDuration;
+  }
 
   @Deprecated
   public RedisStorage(Jedis jedis) {
@@ -204,15 +214,15 @@ public class RedisStorage implements LimitUsageStorage {
                 .collect(Collectors.joining(KEY_SEPARATOR));
 
         responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
-        
-        // We set the expire to the given value or twice the expiration period if not defined. The expiration is there to ensure that 
+
+        // We set the expire to the given value or twice the expiration period if not defined. The expiration is there to ensure that
         // we don't fill the Redis cluster with useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
         int expiration = (int) keyDuration.getSeconds();
-        
-        if(expiration == 0) {
+
+        if (expiration == 0) {
           expiration = (int) request.getExpiration().getSeconds() * 2;
         }
-        
+
         pipeline.expire(redisKey, expiration);
         pipeline.exec();
       }

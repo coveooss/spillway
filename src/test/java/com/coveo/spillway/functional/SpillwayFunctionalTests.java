@@ -66,12 +66,12 @@ public class SpillwayFunctionalTests {
       throw e;
     }
     redisServer.start();
-    
+
     jedis = new Jedis("localhost", 6389);
     storage = new RedisStorage(jedis);
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
   }
-  
+
   @After
   public void stopRedis() {
     redisServer.stop();
@@ -196,12 +196,13 @@ public class SpillwayFunctionalTests {
   @Test
   public void asyncSlidingStorageTest() throws Exception {
     Instant now = Instant.now();
-    
+
     AsyncSlidingLimitUsageStorage asyncStorage =
-        new AsyncSlidingLimitUsageStorage(storage, Duration.ofSeconds(2), Duration.ofMinutes(10), Duration.ofSeconds(20));
-    
+        new AsyncSlidingLimitUsageStorage(
+            storage, Duration.ofSeconds(2), Duration.ofMinutes(10), Duration.ofSeconds(20));
+
     Map<LimitKey, Integer> currentCounters3 = asyncStorage.debugCurrentLimitCounters();
-    
+
     int numberOfCalls = 10000;
     for (int i = 0; i < numberOfCalls; i++) {
       asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, now);

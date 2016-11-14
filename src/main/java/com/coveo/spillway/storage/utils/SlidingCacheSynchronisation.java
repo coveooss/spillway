@@ -59,7 +59,7 @@ public class SlidingCacheSynchronisation extends TimerTask {
   @Override
   public void run() {
     Instant oldestKey = Instant.now().minus(durationToSync);
-    
+
     System.out.println("Now    : " + Instant.now().toEpochMilli());
     System.out.println("Oldest : " + oldestKey.toEpochMilli());
 
@@ -69,11 +69,11 @@ public class SlidingCacheSynchronisation extends TimerTask {
             Instant bucket = instantEntry.getKey();
 
             System.out.println("Current: " + bucket.toEpochMilli());
-            
+
             if (bucket.isBefore(oldestKey)) {
               return;
             }
-            
+
             System.out.println("Sync");
 
             instantEntry
