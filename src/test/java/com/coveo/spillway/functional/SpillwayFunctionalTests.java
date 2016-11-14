@@ -13,9 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -34,7 +32,6 @@ import com.coveo.spillway.storage.RedisStorageTest;
 import com.coveo.spillway.storage.sliding.AsyncSlidingLimitUsageStorage;
 import com.google.common.base.Stopwatch;
 
-import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServer;
 
 @Ignore("Functional tests, remove ignore to run them")
@@ -54,7 +51,6 @@ public class SpillwayFunctionalTests {
   private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
 
   private RedisServer redisServer;
-  private Jedis jedis;
   private RedisStorage storage;
 
   @Before
@@ -67,8 +63,7 @@ public class SpillwayFunctionalTests {
     }
     redisServer.start();
 
-    jedis = new Jedis("localhost", 6389);
-    storage = new RedisStorage(jedis);
+    storage = new RedisStorage("localhost", 6389);
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
   }
 
@@ -200,8 +195,6 @@ public class SpillwayFunctionalTests {
     AsyncSlidingLimitUsageStorage asyncStorage =
         new AsyncSlidingLimitUsageStorage(
             storage, Duration.ofSeconds(2), Duration.ofMinutes(10), Duration.ofSeconds(20));
-
-    Map<LimitKey, Integer> currentCounters3 = asyncStorage.debugCurrentLimitCounters();
 
     int numberOfCalls = 10000;
     for (int i = 0; i < numberOfCalls; i++) {
