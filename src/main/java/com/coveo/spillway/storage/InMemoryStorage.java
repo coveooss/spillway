@@ -31,6 +31,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -57,7 +58,7 @@ public class InMemoryStorage implements LimitUsageStorage {
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
-    Map<LimitKey, Integer> updatedEntries = new HashMap<>();
+    Map<LimitKey, Integer> updatedEntries = new LinkedHashMap<>();
     synchronized (lock) {
       for (AddAndGetRequest request : requests) {
         Instant expirationDate = request.getBucket().plus(request.getExpiration());
