@@ -215,7 +215,7 @@ public class RedisStorage implements LimitUsageStorage {
 
         responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
 
-        // We set the expire to the given value or twice the expiration period if not defined. The expiration is there to ensure that
+        // We set the expiration to the given value or twice the expiration period if not defined. The expiration is there to ensure that
         // we don't fill the Redis cluster with useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
         int expiration = (int) keyDuration.getSeconds();
 

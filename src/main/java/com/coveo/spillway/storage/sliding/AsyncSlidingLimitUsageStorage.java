@@ -31,17 +31,18 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.SlidingCacheSynchronisation;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * An asynchronous sliding window implementation of {@link LimitUsageStorage}.
  * <p>
  * This storage internally uses a {@link InMemorySlidingStorage} as cache and performs
- * asynchronous calls to the distributed storage to share information.
+ * asynchronous calls to synchronize the counts to a central storage.
  * <p>
- * This it particularly useful when using a database over the network as
- * the queries are not slowed down by any external problems.
+ * Since the counts are cached, incoming requests will never be slowed down by problems with
+ * the central storage.
  * <p>
- * This storage does not sync with the main server each time a query arrives. A configurable
+ * This storage does not synchronize with the main server each time a request arrives. A configurable
  * timeout launches the synchronization.
  * <p>
  * The advantage of this method is that the load on the network and on the external
@@ -54,8 +55,8 @@ import com.coveo.spillway.storage.utils.SlidingCacheSynchronisation;
  */
 public class AsyncSlidingLimitUsageStorage implements LimitUsageStorage {
   private final LimitUsageStorage wrappedLimitUsageStorage;
-  private InMemorySlidingStorage cache;
-  private Timer timer;
+  private final InMemorySlidingStorage cache;
+  private final Timer timer;
 
   public AsyncSlidingLimitUsageStorage(
       LimitUsageStorage wrappedLimitUsageStorage,
@@ -70,7 +71,8 @@ public class AsyncSlidingLimitUsageStorage implements LimitUsageStorage {
         cacheSlideSize);
   }
 
-  /*package*/ AsyncSlidingLimitUsageStorage(
+  @VisibleForTesting
+  AsyncSlidingLimitUsageStorage(
       LimitUsageStorage wrappedLimitUsageStorage,
       Duration timeBetweenSynchronisations,
       Duration delayBeforeFirstSync,

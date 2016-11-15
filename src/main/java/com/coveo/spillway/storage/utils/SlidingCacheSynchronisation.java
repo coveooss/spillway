@@ -43,7 +43,7 @@ import com.coveo.spillway.storage.sliding.InMemorySlidingStorage;
  * @since 1.1.0
  */
 public class SlidingCacheSynchronisation extends TimerTask {
-  private static final Logger logger = LoggerFactory.getLogger(CacheSynchronization.class);
+  private static final Logger logger = LoggerFactory.getLogger(SlidingCacheSynchronisation.class);
 
   private InMemorySlidingStorage cache;
   private LimitUsageStorage storage;
@@ -60,21 +60,14 @@ public class SlidingCacheSynchronisation extends TimerTask {
   public void run() {
     Instant oldestKey = Instant.now().minus(durationToSync);
 
-    System.out.println("Now    : " + Instant.now().toEpochMilli());
-    System.out.println("Oldest : " + oldestKey.toEpochMilli());
-
-    cache.applyOnEach(
+    cache.applyForEachLimitKey(
         instantEntry -> {
           try {
             Instant bucket = instantEntry.getKey();
 
-            System.out.println("Current: " + bucket.toEpochMilli());
-
             if (bucket.isBefore(oldestKey)) {
               return;
             }
-
-            System.out.println("Sync");
 
             instantEntry
                 .getValue()
@@ -101,7 +94,7 @@ public class SlidingCacheSynchronisation extends TimerTask {
                       valueEntry.getValue().setTotal(reponse.getValue());
                     });
           } catch (Exception e) {
-            logger.warn("Exception during synchronization, ignoring.", e);
+            logger.error("Exception during synchronization, ignoring.", e);
           }
         });
   }
