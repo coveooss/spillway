@@ -31,7 +31,6 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.LimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.SlidingCacheSynchronisation;
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * An asynchronous sliding window implementation of {@link LimitUsageStorage}.
@@ -48,7 +47,7 @@ import com.google.common.annotations.VisibleForTesting;
  * The advantage of this method is that the load on the network and on the external
  * storage is considerably reduced at the cost of a less precise throttling. We
  * recommend to set a relatively small time between each synchronization to avoid
- * big differences between the throttling instances.
+ * big differences between the throttling instances. A good difference is around +10% the limit capacity.
  *
  * @author Emile Fugulin
  * @since 1.1.0
@@ -71,8 +70,7 @@ public class AsyncSlidingLimitUsageStorage implements LimitUsageStorage {
         cacheSlideSize);
   }
 
-  @VisibleForTesting
-  AsyncSlidingLimitUsageStorage(
+  /*package*/ AsyncSlidingLimitUsageStorage(
       LimitUsageStorage wrappedLimitUsageStorage,
       Duration timeBetweenSynchronisations,
       Duration delayBeforeFirstSync,

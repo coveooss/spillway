@@ -59,7 +59,7 @@ import com.coveo.spillway.storage.utils.Capacity;
 public class InMemorySlidingStorage implements LimitUsageStorage {
   private final Duration retention;
   private final Duration slideSize;
-  private Map<Instant, Map<LimitKey, Capacity>> map = new ConcurrentHashMap<>();
+  private Map<Instant, Map<LimitKey, Capacity>> bucketsStorage = new ConcurrentHashMap<>();
   private Clock clock = Clock.systemDefaultZone();
 
   /**
@@ -92,7 +92,7 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
       LimitKey limitKey = LimitKey.fromRequest(request).withBucket(bucket);
 
       Map<LimitKey, Capacity> mapWithThisExpiration =
-          map.computeIfAbsent(bucket, (key) -> new HashMap<>());
+          bucketsStorage.computeIfAbsent(bucket, (key) -> new HashMap<>());
       Capacity counter = mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
       counter.addAndGet(request.getCost());
 
@@ -106,7 +106,7 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
   @Override
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
     removeExpiredEntries();
-    return map.values()
+    return bucketsStorage.values()
         .stream()
         .flatMap(m -> m.entrySet().stream())
         .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
@@ -116,22 +116,22 @@ public class InMemorySlidingStorage implements LimitUsageStorage {
   public void close() throws Exception {}
 
   public void applyForEachLimitKey(Consumer<Entry<Instant, Map<LimitKey, Capacity>>> action) {
-    map.entrySet().forEach(action);
+    bucketsStorage.entrySet().forEach(action);
     removeExpiredEntries();
   }
 
   private void removeExpiredEntries() {
     Instant oldest = Instant.now(clock).minus(retention);
     Set<Instant> expiredEntries =
-        map.keySet().stream().filter(bucket -> bucket.isBefore(oldest)).collect(Collectors.toSet());
-    map.keySet().removeAll(expiredEntries);
+        bucketsStorage.keySet().stream().filter(bucket -> bucket.isBefore(oldest)).collect(Collectors.toSet());
+    bucketsStorage.keySet().removeAll(expiredEntries);
   }
 
   private Integer calculateLimitTotal(
       Instant currentBucket, Duration limitSize, LimitKey limitKey) {
     Instant oldestBucket = currentBucket.minus(limitSize);
 
-    return map.entrySet()
+    return bucketsStorage.entrySet()
         .stream()
         .filter(entry -> entry.getKey().compareTo(oldestBucket) > 0)
         .flatMap(entry -> entry.getValue().entrySet().stream())
