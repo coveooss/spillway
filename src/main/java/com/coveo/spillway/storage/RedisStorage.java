@@ -22,13 +22,6 @@
  */
 package com.coveo.spillway.storage;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
-import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.utils.AddAndGetRequest;
-
-import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,10 +31,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.Protocol;
 import redis.clients.jedis.Response;
 
 /**
@@ -65,96 +62,9 @@ public class RedisStorage implements LimitUsageStorage {
   private final JedisPool jedisPool;
   private final String keyPrefix;
 
-  public RedisStorage(URI uri) {
-    this(uri, DEFAULT_PREFIX);
-  }
-
-  public RedisStorage(URI uri, String prefix) {
-    this(uri, prefix, Protocol.DEFAULT_TIMEOUT);
-  }
-
-  public RedisStorage(URI uri, String prefix, int timeout) {
-    this(new GenericObjectPoolConfig(), uri, prefix, timeout);
-  }
-
-  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri) {
-    this(poolConfig, uri, DEFAULT_PREFIX);
-  }
-
-  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String prefix) {
-    this(poolConfig, uri, prefix, Protocol.DEFAULT_TIMEOUT);
-  }
-
-  public RedisStorage(GenericObjectPoolConfig poolConfig, URI uri, String prefix, int timeout) {
-    jedisPool = new JedisPool(poolConfig, uri, timeout);
-    keyPrefix = prefix;
-  }
-
-  public RedisStorage(String host) {
-    this(host, Protocol.DEFAULT_PORT);
-  }
-
-  public RedisStorage(String host, int port) {
-    this(host, port, DEFAULT_PREFIX);
-  }
-
-  public RedisStorage(String host, int port, String prefix) {
-    this(new GenericObjectPoolConfig(), host, port, prefix);
-  }
-
-  public RedisStorage(GenericObjectPoolConfig poolConfig, String host) {
-    this(poolConfig, host, Protocol.DEFAULT_PORT);
-  }
-
-  public RedisStorage(GenericObjectPoolConfig poolConfig, String host, int port) {
-    this(poolConfig, host, port, DEFAULT_PREFIX);
-  }
-
-  public RedisStorage(GenericObjectPoolConfig poolConfig, String host, int port, String prefix) {
-    this(poolConfig, host, port, prefix, Protocol.DEFAULT_TIMEOUT);
-  }
-
-  public RedisStorage(
-      GenericObjectPoolConfig poolConfig, String host, int port, String prefix, int timeout) {
-    jedisPool = new JedisPool(poolConfig, host, port, timeout);
-    keyPrefix = prefix;
-  }
-
-  public RedisStorage(
-      GenericObjectPoolConfig poolConfig,
-      String host,
-      int port,
-      String prefix,
-      int timeout,
-      String password) {
-    this(poolConfig, host, port, prefix, timeout, password, Protocol.DEFAULT_DATABASE);
-  }
-
-  public RedisStorage(
-      GenericObjectPoolConfig poolConfig,
-      String host,
-      int port,
-      String prefix,
-      int timeout,
-      String password,
-      int database) {
-    jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
-    keyPrefix = prefix;
-  }
-
-  @Deprecated
-  public RedisStorage(Jedis jedis) {
-    this(jedis, DEFAULT_PREFIX);
-  }
-
-  @Deprecated
-  public RedisStorage(Jedis jedis, String prefix) {
-    this(
-        new GenericObjectPoolConfig(),
-        jedis.getClient().getHost(),
-        jedis.getClient().getPort(),
-        prefix,
-        jedis.getClient().getConnectionTimeout());
+  public RedisStorage(Builder builder) {
+    this.jedisPool = builder.jedisPool;
+    this.keyPrefix = builder.keyPrefix;
   }
 
   @Override
@@ -224,5 +134,40 @@ public class RedisStorage implements LimitUsageStorage {
 
   private static final String clean(String keyComponent) {
     return keyComponent.replace(KEY_SEPARATOR, "_");
+  }
+
+  public static final Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    JedisPool jedisPool;
+    String keyPrefix;
+
+    private Builder() {
+      this.keyPrefix = RedisStorage.DEFAULT_PREFIX;
+    }
+
+    public RedisStorage build() {
+      return new RedisStorage(this);
+    }
+
+    public void setJedisPool(JedisPool jedisPool) {
+      this.jedisPool = jedisPool;
+    }
+
+    public Builder withJedisPool(JedisPool jedisPool) {
+      setJedisPool(jedisPool);
+      return this;
+    }
+
+    public void setKeyPrefix(String keyPrefix) {
+      this.keyPrefix = keyPrefix;
+    }
+
+    public Builder withKeyPrefix(String keyPrefix) {
+      setKeyPrefix(keyPrefix);
+      return this;
+    }
   }
 }

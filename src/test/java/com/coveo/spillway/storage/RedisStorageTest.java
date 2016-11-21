@@ -22,8 +22,12 @@
  */
 package com.coveo.spillway.storage;
 
-import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.RedisStorage;
+import static com.google.common.truth.Truth.*;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -32,15 +36,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
+import com.coveo.spillway.limit.LimitKey;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
-
-import static com.google.common.truth.Truth.assertThat;
 
 /**
  * These are slightly functional tests in the sense that they do not mock Redis.
@@ -58,7 +57,7 @@ public class RedisStorageTest {
   private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
 
   private static RedisServer redisServer;
-  private static Jedis jedis;
+  private static JedisPool jedis;
   private static RedisStorage storage;
 
   @BeforeClass
@@ -70,8 +69,8 @@ public class RedisStorageTest {
       throw e;
     }
     redisServer.start();
-    jedis = new Jedis("localhost", 6389);
-    storage = new RedisStorage(jedis);
+    jedis = new JedisPool("localhost", 6389);
+    storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", 6389)).build();
   }
 
   @AfterClass
@@ -81,7 +80,7 @@ public class RedisStorageTest {
 
   @Before
   public void flushDataInRedis() {
-    jedis.flushDB();
+    jedis.getResource().flushDB();
   }
 
   @Test
