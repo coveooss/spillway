@@ -31,6 +31,12 @@
             <organization>Coveo</organization>
             <organizationUrl>http://github.com/coveo</organizationUrl>
         </developer>
+        <developer>
+            <name>Pierre-Alexandre St-Jean</name>
+            <url>http://github.com/pastjean</url>
+            <organization>Coveo</organization>
+            <organizationUrl>http://github.com/coveo</organizationUrl>
+        </developer>
     </developers>
 
     <scm>

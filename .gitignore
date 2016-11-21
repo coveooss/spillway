@@ -7,6 +7,7 @@ tmp/
 *.bak
 *.swp
 *~.nib
+*.orig
 local.properties
 .settings/
 .loadpath
@@ -15,42 +16,18 @@ local.properties
 # Eclipse Core
 .project
 
+# IntelliJ (and all other ideas)
+.idea
+*.iml
+
 # External tool builders
 .externalToolBuilders/
 
 # Locally stored "Eclipse launch configurations"
 *.launch
 
-# PyDev specific (Python IDE for Eclipse)
-*.pydevproject
-
-# CDT-specific (C/C++ Development Tooling)
-.cproject
-
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
-
-# Java annotation processor (APT)
-.factorypath
-
-# PDT-specific (PHP Development Tools)
-.buildpath
-
-# sbteclipse plugin
-.target
-
-# Tern plugin
-.tern-project
-
-# TeXlipse plugin
-.texlipse
-
-# STS (Spring Tool Suite)
-.springBeans
-
-# Code Recommenders
-.recommenders/
-
 
 # MAVEN #
 #########
