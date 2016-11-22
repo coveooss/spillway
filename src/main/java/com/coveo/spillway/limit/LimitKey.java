@@ -32,6 +32,7 @@ import com.coveo.spillway.storage.utils.AddAndGetRequest;
  * used as a key in Maps and Pairs returned by storages.
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class LimitKey {

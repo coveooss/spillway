@@ -34,6 +34,7 @@ import java.time.Instant;
  * @see Builder
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class AddAndGetRequest {
