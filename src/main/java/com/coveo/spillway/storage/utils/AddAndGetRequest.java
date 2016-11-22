@@ -40,11 +40,9 @@ public class AddAndGetRequest {
   private String resource;
   private String limitName;
   private String property;
-  private Duration expiration;
-  private Instant eventTimestamp;
-  private int cost;
-
   private Instant bucket;
+  private Duration limitDuration;
+  private int cost;
 
   public String getResource() {
     return resource;
@@ -59,11 +57,7 @@ public class AddAndGetRequest {
   }
 
   public Duration getExpiration() {
-    return expiration;
-  }
-
-  public Instant getEventTimestamp() {
-    return eventTimestamp;
+    return limitDuration;
   }
 
   public int getCost() {
@@ -78,12 +72,9 @@ public class AddAndGetRequest {
     resource = builder.resource;
     limitName = builder.limitName;
     property = builder.property;
-    expiration = builder.expiration;
-    eventTimestamp = builder.eventTimestamp;
+    limitDuration = builder.limitDuration;
     cost = builder.cost;
-    bucket =
-        Instant.ofEpochMilli(
-            (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
+    bucket = builder.bucket;
   }
 
   /**
@@ -104,8 +95,8 @@ public class AddAndGetRequest {
     private String resource;
     private String limitName;
     private String property;
-    private Duration expiration;
-    private Instant eventTimestamp;
+    private Duration limitDuration;
+    private Instant bucket;
     private int cost = 1;
 
     public Builder() {}
@@ -114,8 +105,8 @@ public class AddAndGetRequest {
       this.resource = other.resource;
       this.limitName = other.limitName;
       this.property = other.property;
-      this.expiration = other.expiration;
-      this.eventTimestamp = other.eventTimestamp;
+      this.limitDuration = other.limitDuration;
+      this.bucket = other.getBucket();
       this.cost = other.cost;
     }
 
@@ -134,13 +125,18 @@ public class AddAndGetRequest {
       return this;
     }
 
-    public Builder withExpiration(Duration val) {
-      expiration = val;
+    public Builder withLimitDuration(Duration val) {
+      limitDuration = val;
       return this;
     }
 
     public Builder withEventTimestamp(Instant val) {
-      eventTimestamp = val;
+      bucket = Instant.ofEpochMilli((val.toEpochMilli() / limitDuration.toMillis()) * limitDuration.toMillis());
+      return this;
+    }
+    
+    public Builder withBucket(Instant val) {
+      bucket = val;
       return this;
     }
 
@@ -166,11 +162,11 @@ public class AddAndGetRequest {
     if (limitName != null ? !limitName.equals(that.limitName) : that.limitName != null)
       return false;
     if (property != null ? !property.equals(that.property) : that.property != null) return false;
-    if (expiration != null ? !expiration.equals(that.expiration) : that.expiration != null)
+    if (limitDuration != null ? !limitDuration.equals(that.limitDuration) : that.limitDuration != null)
       return false;
-    if (eventTimestamp != null
-        ? !eventTimestamp.equals(that.eventTimestamp)
-        : that.eventTimestamp != null) return false;
+    if (bucket != null
+        ? !bucket.equals(that.bucket)
+        : that.bucket != null) return false;
     return bucket != null ? bucket.equals(that.bucket) : that.bucket == null;
   }
 
@@ -179,8 +175,8 @@ public class AddAndGetRequest {
     int result = resource != null ? resource.hashCode() : 0;
     result = 31 * result + (limitName != null ? limitName.hashCode() : 0);
     result = 31 * result + (property != null ? property.hashCode() : 0);
-    result = 31 * result + (expiration != null ? expiration.hashCode() : 0);
-    result = 31 * result + (eventTimestamp != null ? eventTimestamp.hashCode() : 0);
+    result = 31 * result + (limitDuration != null ? limitDuration.hashCode() : 0);
+    result = 31 * result + (limitDuration != null ? limitDuration.hashCode() : 0);
     result = 31 * result + cost;
     result = 31 * result + (bucket != null ? bucket.hashCode() : 0);
     return result;
@@ -199,9 +195,9 @@ public class AddAndGetRequest {
         + property
         + '\''
         + ", expiration="
-        + expiration
+        + limitDuration
         + ", eventTimestamp="
-        + eventTimestamp
+        + bucket
         + ", cost="
         + cost
         + ", bucket="
