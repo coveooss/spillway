@@ -57,7 +57,7 @@ public class AddAndGetRequest {
     return property;
   }
 
-  public Duration getExpiration() {
+  public Duration getLimitDuration() {
     return limitDuration;
   }
 
@@ -90,6 +90,7 @@ public class AddAndGetRequest {
    * @see AddAndGetRequest
    *
    * @author Guillaume Simard
+   * @author Emile Fugulin
    * @since 1.0.0
    */
   public static final class Builder {
@@ -100,6 +101,8 @@ public class AddAndGetRequest {
     private Instant bucket;
     private int cost = 1;
 
+    private Instant eventTimestamp;
+
     public Builder() {}
 
     public Builder(AddAndGetRequest other) {
@@ -107,7 +110,7 @@ public class AddAndGetRequest {
       this.limitName = other.limitName;
       this.property = other.property;
       this.limitDuration = other.limitDuration;
-      this.bucket = other.getBucket();
+      this.bucket = other.bucket;
       this.cost = other.cost;
     }
 
@@ -132,10 +135,10 @@ public class AddAndGetRequest {
     }
 
     public Builder withEventTimestamp(Instant val) {
-      bucket = Instant.ofEpochMilli((val.toEpochMilli() / limitDuration.toMillis()) * limitDuration.toMillis());
+      eventTimestamp = val;
       return this;
     }
-    
+
     public Builder withBucket(Instant val) {
       bucket = val;
       return this;
@@ -147,6 +150,12 @@ public class AddAndGetRequest {
     }
 
     public AddAndGetRequest build() {
+      if (eventTimestamp != null && bucket == null) {
+        bucket =
+            Instant.ofEpochMilli(
+                (eventTimestamp.toEpochMilli() / limitDuration.toMillis())
+                    * limitDuration.toMillis());
+      }
       return new AddAndGetRequest(this);
     }
   }
@@ -163,11 +172,10 @@ public class AddAndGetRequest {
     if (limitName != null ? !limitName.equals(that.limitName) : that.limitName != null)
       return false;
     if (property != null ? !property.equals(that.property) : that.property != null) return false;
-    if (limitDuration != null ? !limitDuration.equals(that.limitDuration) : that.limitDuration != null)
-      return false;
-    if (bucket != null
-        ? !bucket.equals(that.bucket)
-        : that.bucket != null) return false;
+    if (limitDuration != null
+        ? !limitDuration.equals(that.limitDuration)
+        : that.limitDuration != null) return false;
+    if (bucket != null ? !bucket.equals(that.bucket) : that.bucket != null) return false;
     return bucket != null ? bucket.equals(that.bucket) : that.bucket == null;
   }
 

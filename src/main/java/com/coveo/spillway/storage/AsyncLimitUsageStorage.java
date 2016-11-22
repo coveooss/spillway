@@ -100,7 +100,7 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
       Map<Pair<LimitKey, Instant>, Integer> rawOverrides = new HashMap<>();
       for (AddAndGetRequest request : requests) {
         LimitKey limitEntry = LimitKey.fromRequest(request);
-        Instant expirationDate = request.getBucket().plus(request.getExpiration());
+        Instant expirationDate = request.getBucket().plus(request.getLimitDuration());
 
         rawOverrides.merge(
             Pair.of(limitEntry, expirationDate), responses.get(limitEntry), Integer::sum);

@@ -61,7 +61,7 @@ public class AsyncLimitUsageStorageTest {
           .withLimitName(LIMITNAME)
           .withEventTimestamp(INSTANT)
           .withCost(1)
-          .withExpiration(EXPIRATION)
+          .withLimitDuration(EXPIRATION)
           .build();
 
   @Before

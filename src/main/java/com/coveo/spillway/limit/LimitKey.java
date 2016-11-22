@@ -39,10 +39,11 @@ public class LimitKey {
   private String resource;
   private String limitName;
   private String property;
-  private Instant bucket;
   private Duration limitDuration;
+  private Instant bucket;
 
-  public LimitKey(String resource, String limitName, String property, Instant bucket, Duration limitDuration) {
+  public LimitKey(
+      String resource, String limitName, String property, Duration limitDuration, Instant bucket) {
     this.resource = resource;
     this.limitName = limitName;
     this.property = property;
@@ -81,11 +82,11 @@ public class LimitKey {
   public void setLimitName(String limitName) {
     this.limitName = limitName;
   }
-  
+
   public Duration getLimitDuration() {
     return limitDuration;
   }
-  
+
   public void setLimitDuration(Duration limitDuration) {
     this.limitDuration = limitDuration;
   }
@@ -103,9 +104,10 @@ public class LimitKey {
       return false;
     if (property != null ? !property.equals(limitKey.property) : limitKey.property != null)
       return false;
-    if (bucket != null ? !bucket.equals(limitKey.bucket) : limitKey.bucket != null)
-      return false;
-    return limitDuration != null ? limitDuration.equals(limitKey.limitDuration) : limitKey.limitDuration == null;
+    if (bucket != null ? !bucket.equals(limitKey.bucket) : limitKey.bucket != null) return false;
+    return limitDuration != null
+        ? limitDuration.equals(limitKey.limitDuration)
+        : limitKey.limitDuration == null;
   }
 
   @Override
@@ -140,6 +142,10 @@ public class LimitKey {
 
   public static LimitKey fromRequest(AddAndGetRequest request) {
     return new LimitKey(
-        request.getResource(), request.getLimitName(), request.getProperty(), request.getBucket(), request.getExpiration());
+        request.getResource(),
+        request.getLimitName(),
+        request.getProperty(),
+        request.getLimitDuration(),
+        request.getBucket());
   }
 }

@@ -61,7 +61,7 @@ public class InMemoryStorage implements LimitUsageStorage {
     Map<LimitKey, Integer> updatedEntries = new LinkedHashMap<>();
     synchronized (lock) {
       for (AddAndGetRequest request : requests) {
-        Instant expirationDate = request.getBucket().plus(request.getExpiration());
+        Instant expirationDate = request.getBucket().plus(request.getLimitDuration());
 
         LimitKey limitKey = LimitKey.fromRequest(request);
 
