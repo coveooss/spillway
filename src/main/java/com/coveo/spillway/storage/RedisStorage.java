@@ -62,7 +62,7 @@ public class RedisStorage implements LimitUsageStorage {
   private final JedisPool jedisPool;
   private final String keyPrefix;
 
-  public RedisStorage(Builder builder) {
+  RedisStorage(Builder builder) {
     this.jedisPool = builder.jedisPool;
     this.keyPrefix = builder.keyPrefix;
   }
@@ -148,10 +148,6 @@ public class RedisStorage implements LimitUsageStorage {
       this.keyPrefix = RedisStorage.DEFAULT_PREFIX;
     }
 
-    public RedisStorage build() {
-      return new RedisStorage(this);
-    }
-
     public void setJedisPool(JedisPool jedisPool) {
       this.jedisPool = jedisPool;
     }
@@ -168,6 +164,10 @@ public class RedisStorage implements LimitUsageStorage {
     public Builder withKeyPrefix(String keyPrefix) {
       setKeyPrefix(keyPrefix);
       return this;
+    }
+
+    public RedisStorage build() {
+      return new RedisStorage(this);
     }
   }
 }
