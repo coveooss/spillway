@@ -32,7 +32,7 @@ import com.coveo.spillway.storage.RedisStorage;
 import com.coveo.spillway.storage.RedisStorageTest;
 import com.google.common.base.Stopwatch;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
 
 @Ignore("Functional tests, remove ignore to run them")
@@ -52,7 +52,7 @@ public class SpillwayFunctionalTests {
   private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
 
   private static RedisServer redisServer;
-  private static Jedis jedis;
+  private static JedisPool jedis;
   private static RedisStorage storage;
 
   @BeforeClass
@@ -64,8 +64,8 @@ public class SpillwayFunctionalTests {
       throw e;
     }
     redisServer.start();
-    jedis = new Jedis("localhost", 6389);
-    storage = new RedisStorage(jedis);
+    jedis = new JedisPool("localhost", 6389);
+    storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", 6389)).build();
   }
 
   @AfterClass
@@ -75,7 +75,7 @@ public class SpillwayFunctionalTests {
 
   @Before
   public void setup() {
-    jedis.flushDB();
+    jedis.getResource().flushDB();
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
   }
 
