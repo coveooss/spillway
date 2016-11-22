@@ -22,6 +22,12 @@
  */
 package com.coveo.spillway.storage;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
+
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,11 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.utils.AddAndGetRequest;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -83,6 +84,7 @@ public class RedisStorage implements LimitUsageStorage {
                     limitKey.getResource(),
                     limitKey.getLimitName(),
                     limitKey.getProperty(),
+                    limitKey.getLimitDuration().toString(),
                     limitKey.getBucket().toString())
                 .map(RedisStorage::clean)
                 .collect(Collectors.joining(KEY_SEPARATOR));
@@ -90,7 +92,7 @@ public class RedisStorage implements LimitUsageStorage {
         responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
         // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
         // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-        pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
+        pipeline.expire(redisKey, (int) request.getLimitDuration().getSeconds() * 2);
         pipeline.exec();
       }
 
@@ -119,7 +121,8 @@ public class RedisStorage implements LimitUsageStorage {
                 keyComponents[1],
                 keyComponents[2],
                 keyComponents[3],
-                Instant.parse(keyComponents[4])),
+                Duration.parse(keyComponents[4]),
+                Instant.parse(keyComponents[5])),
             value);
       }
     }

@@ -22,8 +22,6 @@
  */
 package com.coveo.spillway.storage.utils;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.TimerTask;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,8 +56,6 @@ public class CacheSynchronization extends TimerTask {
     cache.applyOnEach(
         instantEntry -> {
           try {
-            Instant expiration = instantEntry.getKey();
-
             instantEntry
                 .getValue()
                 .entrySet()
@@ -69,17 +65,13 @@ public class CacheSynchronization extends TimerTask {
 
                       LimitKey limitKey = valueEntry.getKey();
 
-                      Duration duration =
-                          Duration.ofMillis(
-                              expiration.toEpochMilli() - limitKey.getBucket().toEpochMilli());
-
                       AddAndGetRequest request =
                           new AddAndGetRequest.Builder()
                               .withResource(limitKey.getResource())
                               .withLimitName(limitKey.getLimitName())
                               .withProperty(limitKey.getProperty())
-                              .withExpiration(duration)
-                              .withEventTimestamp(limitKey.getBucket())
+                              .withLimitDuration(limitKey.getLimitDuration())
+                              .withBucket(limitKey.getBucket())
                               .withCost(cost)
                               .build();
 

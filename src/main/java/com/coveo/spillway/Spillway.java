@@ -139,7 +139,7 @@ public class Spillway<T> {
                         .withResource(resource)
                         .withLimitName(limit.getName())
                         .withProperty(limit.getProperty(context))
-                        .withExpiration(limit.getExpiration(context))
+                        .withLimitDuration(limit.getExpiration(context))
                         .withEventTimestamp(now)
                         .withCost(cost)
                         .build())

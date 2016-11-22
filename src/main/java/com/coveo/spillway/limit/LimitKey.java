@@ -22,6 +22,7 @@
  */
 package com.coveo.spillway.limit;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
@@ -31,19 +32,23 @@ import com.coveo.spillway.storage.utils.AddAndGetRequest;
  * used as a key in Maps and Pairs returned by storages.
  *
  * @author Guillaume Simard
+ * @author Emile Fugulin
  * @since 1.0.0
  */
 public class LimitKey {
   private String resource;
   private String limitName;
   private String property;
+  private Duration limitDuration;
   private Instant bucket;
 
-  public LimitKey(String resource, String limitName, String property, Instant bucket) {
+  public LimitKey(
+      String resource, String limitName, String property, Duration limitDuration, Instant bucket) {
     this.resource = resource;
     this.limitName = limitName;
     this.property = property;
     this.bucket = bucket;
+    this.limitDuration = limitDuration;
   }
 
   public String getResource() {
@@ -78,6 +83,14 @@ public class LimitKey {
     this.limitName = limitName;
   }
 
+  public Duration getLimitDuration() {
+    return limitDuration;
+  }
+
+  public void setLimitDuration(Duration limitDuration) {
+    this.limitDuration = limitDuration;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -91,7 +104,10 @@ public class LimitKey {
       return false;
     if (property != null ? !property.equals(limitKey.property) : limitKey.property != null)
       return false;
-    return bucket != null ? bucket.equals(limitKey.bucket) : limitKey.bucket == null;
+    if (bucket != null ? !bucket.equals(limitKey.bucket) : limitKey.bucket != null) return false;
+    return limitDuration != null
+        ? limitDuration.equals(limitKey.limitDuration)
+        : limitKey.limitDuration == null;
   }
 
   @Override
@@ -100,6 +116,7 @@ public class LimitKey {
     result = 31 * result + (limitName != null ? limitName.hashCode() : 0);
     result = 31 * result + (property != null ? property.hashCode() : 0);
     result = 31 * result + (bucket != null ? bucket.hashCode() : 0);
+    result = 31 * result + (limitDuration != null ? limitDuration.hashCode() : 0);
     return result;
   }
 
@@ -117,11 +134,18 @@ public class LimitKey {
         + '\''
         + ", bucket="
         + bucket
+        + '\''
+        + ", limitDuration="
+        + limitDuration
         + '}';
   }
 
   public static LimitKey fromRequest(AddAndGetRequest request) {
     return new LimitKey(
-        request.getResource(), request.getLimitName(), request.getProperty(), request.getBucket());
+        request.getResource(),
+        request.getLimitName(),
+        request.getProperty(),
+        request.getLimitDuration(),
+        request.getBucket());
   }
 }

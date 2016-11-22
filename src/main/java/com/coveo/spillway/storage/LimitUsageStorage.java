@@ -47,7 +47,7 @@ public interface LimitUsageStorage {
    * @param resource The resource name on which the limit is enforced
    * @param limitName The name of the limit
    * @param property The name of the property used in the limit
-   * @param expiration The duration of the limit before it is reset
+   * @param limitDuration The duration of the limit before it is reset
    * @param eventTimestamp The Instant at which the event was recorded
    * @return A Pair of the limit and its current count
    */
@@ -55,9 +55,9 @@ public interface LimitUsageStorage {
       String resource,
       String limitName,
       String property,
-      Duration expiration,
+      Duration limitDuration,
       Instant eventTimestamp) {
-    return addAndGet(resource, limitName, property, expiration, eventTimestamp, 1);
+    return addAndGet(resource, limitName, property, limitDuration, eventTimestamp, 1);
   }
 
   /**
@@ -66,7 +66,7 @@ public interface LimitUsageStorage {
    * @param resource The resource name on which the limit is enforced
    * @param limitName The name of the limit
    * @param property The name of the property used in the limit
-   * @param expiration The duration of the limit before it is reset
+   * @param limitDuration The duration of the limit before it is reset
    * @param eventTimestamp The Instant at which the event was recorded
    * @param cost The cost the query
    * @return A Pair of the limit and its current count
@@ -75,7 +75,7 @@ public interface LimitUsageStorage {
       String resource,
       String limitName,
       String property,
-      Duration expiration,
+      Duration limitDuration,
       Instant eventTimestamp,
       int cost) {
     return addAndGet(
@@ -83,7 +83,7 @@ public interface LimitUsageStorage {
             .withResource(resource)
             .withLimitName(limitName)
             .withProperty(property)
-            .withExpiration(expiration)
+            .withLimitDuration(limitDuration)
             .withEventTimestamp(eventTimestamp)
             .withCost(cost)
             .build());
