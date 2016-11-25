@@ -23,7 +23,9 @@
 package com.coveo.spillway;
 
 import java.time.Clock;
+import java.util.Arrays;
 
+import com.coveo.spillway.exception.SpillwayLimitWithSameNameException;
 import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.storage.LimitUsageStorage;
@@ -58,9 +60,18 @@ public class SpillwayFactory {
    * @param resource The name of the resource on which the limit are enforced
    * @param limits The different enforced limits
    * @return The new {@link Spillway}
+   * @throws SpillwayLimitWithSameNameException
    */
   @SafeVarargs
-  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits) {
+  public final <T> Spillway<T> enforce(String resource, Limit<T>... limits)
+      throws SpillwayLimitWithSameNameException {
+    int numberOfDistinctLimits =
+        (int) Arrays.stream(limits).map(limit -> limit.getName()).distinct().count();
+
+    if (numberOfDistinctLimits != Arrays.asList(limits).size()) {
+      throw new SpillwayLimitWithSameNameException();
+    }
+
     return new Spillway<>(clock, storage, resource, limits);
   }
 }

@@ -23,6 +23,7 @@
 package com.coveo.spillway;
 
 import com.coveo.spillway.exception.SpillwayLimitExceededException;
+import com.coveo.spillway.exception.SpillwayLimitWithSameNameException;
 import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
@@ -108,7 +109,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void simpleLimit() {
+  public void simpleLimit() throws Exception {
     Limit<User> limit1 =
         LimitBuilder.of("perUser", User::getName).to(2).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", limit1);
@@ -118,20 +119,17 @@ public class SpillwayTest {
     assertThat(spillway.tryCall(john)).isFalse(); // Third tryCall fails
   }
 
-  @Test
-  public void multipleLimitsWithOverlap() {
+  @Test(expected = SpillwayLimitWithSameNameException.class)
+  public void multipleLimitsWithOverlap() throws Exception {
     Limit<User> limit1 =
         LimitBuilder.of("perUser", User::getName).to(5).per(Duration.ofHours(1)).build();
     Limit<User> limit2 =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofSeconds(1)).build();
-    Spillway<User> spillway = inMemoryFactory.enforce("testResource", limit1, limit2);
-
-    assertThat(spillway.tryCall(john)).isTrue();
-    assertThat(spillway.tryCall(john)).isFalse(); // 2nd tryCall fails
+    inMemoryFactory.enforce("testResource", limit1, limit2);
   }
 
   @Test
-  public void multipleLimitsNoOverlap() {
+  public void multipleLimitsNoOverlap() throws Exception {
     Limit<User> ipLimit =
         LimitBuilder.of("perIp", User::getIp).to(1).per(Duration.ofHours(1)).build();
     Limit<User> userLimit =
@@ -143,7 +141,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void multipleResourcesEachHaveTheirOwnLimit() {
+  public void multipleResourcesEachHaveTheirOwnLimit() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofHours(1)).build();
     Spillway<User> spillway1 = inMemoryFactory.enforce("testResource1", userLimit);
@@ -156,7 +154,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canUseDefaultPropertyExtractor() {
+  public void canUseDefaultPropertyExtractor() throws Exception {
     Limit<String> userLimit = LimitBuilder.of("perUser").to(1).per(Duration.ofHours(1)).build();
     Spillway<String> spillway = inMemoryFactory.enforce("testResource", userLimit);
 
@@ -165,7 +163,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canBeNotifiedWhenLimitIsExceeded() {
+  public void canBeNotifiedWhenLimitIsExceeded() throws Exception {
     LimitTriggerCallback callback = mock(LimitTriggerCallback.class);
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName)
@@ -182,8 +180,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void callThrowsAnExceptionWhichContainsAllTheDetails()
-      throws SpillwayLimitExceededException {
+  public void callThrowsAnExceptionWhichContainsAllTheDetails() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -200,7 +197,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void callThrowsForMultipleBreachedLimits() throws SpillwayLimitExceededException {
+  public void callThrowsForMultipleBreachedLimits() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofHours(1)).build();
     Limit<User> ipLimit =
@@ -221,7 +218,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void bucketChangesWhenTimePasses() {
+  public void bucketChangesWhenTimePasses() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(1).per(Duration.ofSeconds(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -236,7 +233,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canGetCurrentLimitStatus() throws SpillwayLimitExceededException {
+  public void canGetCurrentLimitStatus() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(2).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -269,7 +266,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void ifCallbackThrowsWeIgnoreThatCallbackAndContinue() {
+  public void ifCallbackThrowsWeIgnoreThatCallbackAndContinue() throws Exception {
     LimitTriggerCallback callbackThatIsOkay = mock(LimitTriggerCallback.class);
     LimitTriggerCallback callbackThatThrows = mock(LimitTriggerCallback.class);
     doThrow(RuntimeException.class)
@@ -305,7 +302,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canExceedLimitByDoingALargeIncrement() {
+  public void canExceedLimitByDoingALargeIncrement() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(2).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -320,7 +317,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void costCanBeALargeNumber() {
+  public void costCanBeALargeNumber() throws Exception {
     Limit<User> userLimit =
         LimitBuilder.of("perUser", User::getName).to(4).per(Duration.ofHours(1)).build();
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", userLimit);
@@ -330,7 +327,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canAddLimitTriggers() {
+  public void canAddLimitTriggers() throws Exception {
     LimitTriggerCallback callback = mock(LimitTriggerCallback.class);
     ValueThresholdTrigger trigger = new ValueThresholdTrigger(5, callback);
 
@@ -352,7 +349,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void triggersAreIgnoreIfTheStorageReturnsAnIncoherentResponse() {
+  public void triggersAreIgnoreIfTheStorageReturnsAnIncoherentResponse() throws Exception {
     when(mockedStorage.addAndGet(anyListOf(AddAndGetRequest.class)))
         .thenReturn(
             ImmutableMap.of(
@@ -374,7 +371,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canAddCapacityLimitOverride() {
+  public void canAddCapacityLimitOverride() throws Exception {
     LimitOverride override = LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_DURATION).build();
 
     Limit<User> userLimit =
@@ -389,7 +386,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canAddExpirationLimitOverride() {
+  public void canAddExpirationLimitOverride() throws Exception {
     LimitOverride override =
         LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_SHORT_DURATION).build();
 
@@ -411,7 +408,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void canAddTriggersLimitOverride() {
+  public void canAddTriggersLimitOverride() throws Exception {
     ArgumentCaptor<LimitDefinition> definitionCaptor =
         ArgumentCaptor.forClass(LimitDefinition.class);
 
@@ -445,7 +442,7 @@ public class SpillwayTest {
   }
 
   @Test
-  public void testAddMultipleLimitOverridesForSameProperty() {
+  public void testAddMultipleLimitOverridesForSameProperty() throws Exception {
     LimitOverride override = LimitOverrideBuilder.of(JOHN).to(A_CAPACITY).per(A_DURATION).build();
     LimitOverride anotherOverride =
         LimitOverrideBuilder.of(JOHN).to(A_SMALLER_CAPACITY).per(A_DURATION).build();

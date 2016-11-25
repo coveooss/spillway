@@ -38,10 +38,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 /**
@@ -145,20 +145,23 @@ public class Spillway<T> {
                         .build())
             .collect(Collectors.toList());
 
-    Collection<Integer> results = storage.addAndGet(requests).values();
+    Map<LimitKey, Integer> results = storage.addAndGet(requests);
 
     List<LimitDefinition> exceededLimits = new ArrayList<>();
     if (results.size() == limits.size()) {
-      int i = 0;
-      for (Integer result : results) {
-        Limit<T> limit = limits.get(i);
+      for (Entry<LimitKey, Integer> result : results.entrySet()) {
+        Limit<T> limit =
+            limits
+                .stream()
+                .filter(entry -> entry.getName().equals(result.getKey().getLimitName()))
+                .findFirst()
+                .get();
 
-        handleTriggers(context, cost, result, limit);
+        handleTriggers(context, cost, result.getValue(), limit);
 
-        if (result > limit.getCapacity(context)) {
+        if (result.getValue() > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
         }
-        i++;
       }
     } else {
       logger.error(
