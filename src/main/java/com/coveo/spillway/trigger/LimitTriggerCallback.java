@@ -22,6 +22,8 @@
  */
 package com.coveo.spillway.trigger;
 
+import java.time.Instant;
+
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
 
@@ -40,7 +42,7 @@ public interface LimitTriggerCallback {
   LimitTriggerCallback DO_NOTHING = (limitDefinition, context) -> {};
 
   /**
-   * This method is called by by {@link AbstractLimitTrigger#callbackIfRequired(Object, int, int, LimitDefinition)}
+   * This method is called by by {@link AbstractLimitTrigger#callbackIfRequired(Object, int, Instant, int, LimitDefinition)}
    * if the current limit associated counter meets the trigger value.
    *
    * @param definition The properties of the current limit

@@ -144,7 +144,7 @@ public class Spillway<T> {
                 .findFirst()
                 .get();
 
-        handleTriggers(context, cost, result.getValue() + cost, limit);
+        handleTriggers(context, cost, now, result.getValue() + cost, limit);
 
         if (result.getValue() + cost > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
@@ -183,10 +183,12 @@ public class Spillway<T> {
         .collect(Collectors.toList());
   }
 
-  private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {
+  private void handleTriggers(
+      T context, int cost, Instant timestamp, int currentValue, Limit<T> limit) {
     for (LimitTrigger trigger : limit.getLimitTriggers(context)) {
       try {
-        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition(context));
+        trigger.callbackIfRequired(
+            context, cost, timestamp, currentValue, limit.getDefinition(context));
       } catch (RuntimeException ex) {
         logger.warn(
             "Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);

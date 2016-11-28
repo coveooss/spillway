@@ -22,6 +22,9 @@
  */
 package com.coveo.spillway.trigger;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
 
@@ -38,6 +41,7 @@ import com.coveo.spillway.limit.LimitDefinition;
 public abstract class AbstractLimitTrigger implements LimitTrigger {
 
   private final LimitTriggerCallback callback;
+  private Instant triggeredBucket = Instant.EPOCH;
 
   public AbstractLimitTrigger(LimitTriggerCallback callback) {
     this.callback = callback;
@@ -56,13 +60,26 @@ public abstract class AbstractLimitTrigger implements LimitTrigger {
    * @return True if the limit is triggered, false otherwise
    */
   protected abstract <T> boolean triggered(
-      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition);
+      T context, int currentLimitValue, LimitDefinition limitDefinition);
 
   @Override
   public <T> void callbackIfRequired(
-      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {
-    if (triggered(context, cost, currentLimitValue, limitDefinition)) {
+      T context,
+      int cost,
+      Instant timestamp,
+      int currentLimitValue,
+      LimitDefinition limitDefinition) {
+    Instant currentBucket = calculateBucket(timestamp, limitDefinition.getExpiration());
+
+    if (triggered(context, currentLimitValue, limitDefinition)
+        && currentBucket.isAfter(triggeredBucket)) {
+      triggeredBucket = currentBucket;
       callback.trigger(limitDefinition, context);
     }
+  }
+
+  private Instant calculateBucket(Instant timestamp, Duration limitDuration) {
+    return Instant.ofEpochMilli(
+        (timestamp.toEpochMilli() / limitDuration.toMillis()) * limitDuration.toMillis());
   }
 }
