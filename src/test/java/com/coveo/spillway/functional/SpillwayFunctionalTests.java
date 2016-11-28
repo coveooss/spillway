@@ -35,7 +35,7 @@ import com.google.common.base.Stopwatch;
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
 
-//@Ignore("Functional tests, remove ignore to run them")
+@Ignore("Functional tests, remove ignore to run them")
 public class SpillwayFunctionalTests {
 
   private static final String RESOURCE1 = "someResource";
