@@ -119,6 +119,7 @@ public class RedisStorage implements LimitUsageStorage {
                 keyComponents[1],
                 keyComponents[2],
                 keyComponents[3],
+                true,
                 Instant.parse(keyComponents[4])),
             value);
       }

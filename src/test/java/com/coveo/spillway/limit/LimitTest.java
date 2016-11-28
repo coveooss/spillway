@@ -40,7 +40,8 @@ public class LimitTest {
   public void toStringIsTheLimitDefinitionToString() {
     LimitDefinition limitDefinition = new LimitDefinition("potato", 5, Duration.ofDays(100));
     Limit<String> limit =
-        new Limit<>(limitDefinition, Function.identity(), new HashSet<>(), new ArrayList<>());
+        new Limit<>(
+            limitDefinition, false, Function.identity(), new HashSet<>(), new ArrayList<>());
 
     assertThat(limit.toString()).isEqualTo(limitDefinition.toString());
   }

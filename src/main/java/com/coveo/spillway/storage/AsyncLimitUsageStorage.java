@@ -94,6 +94,8 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
 
   public void sendAndCacheRequests(Collection<AddAndGetRequest> requests) {
     try {
+      requests =
+          requests.stream().filter(request -> request.isDistributed()).collect(Collectors.toList());
       Map<LimitKey, Integer> responses = wrappedLimitUsageStorage.addAndGet(requests);
 
       // Flatten all requests into a single list of overrides.

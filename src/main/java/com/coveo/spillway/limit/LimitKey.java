@@ -37,13 +37,16 @@ public class LimitKey {
   private String resource;
   private String limitName;
   private String property;
+  private boolean distributed;
   private Instant bucket;
 
-  public LimitKey(String resource, String limitName, String property, Instant bucket) {
+  public LimitKey(
+      String resource, String limitName, String property, boolean distributed, Instant bucket) {
     this.resource = resource;
     this.limitName = limitName;
     this.property = property;
     this.bucket = bucket;
+    this.distributed = distributed;
   }
 
   public String getResource() {
@@ -76,6 +79,14 @@ public class LimitKey {
 
   public void setLimitName(String limitName) {
     this.limitName = limitName;
+  }
+
+  public boolean isDistributed() {
+    return distributed;
+  }
+
+  public void setDistributed(boolean distributed) {
+    this.distributed = distributed;
   }
 
   @Override
@@ -122,6 +133,10 @@ public class LimitKey {
 
   public static LimitKey fromRequest(AddAndGetRequest request) {
     return new LimitKey(
-        request.getResource(), request.getLimitName(), request.getProperty(), request.getBucket());
+        request.getResource(),
+        request.getLimitName(),
+        request.getProperty(),
+        request.isDistributed(),
+        request.getBucket());
   }
 }

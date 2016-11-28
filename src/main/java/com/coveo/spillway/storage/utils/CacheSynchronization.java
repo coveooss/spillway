@@ -65,9 +65,13 @@ public class CacheSynchronization extends TimerTask {
                 .entrySet()
                 .forEach(
                     valueEntry -> {
-                      int cost = valueEntry.getValue().getDelta();
-
                       LimitKey limitKey = valueEntry.getKey();
+
+                      if (!limitKey.isDistributed()) {
+                        return;
+                      }
+
+                      int cost = valueEntry.getValue().getDelta();
 
                       Duration duration =
                           Duration.ofMillis(

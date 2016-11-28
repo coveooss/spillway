@@ -47,6 +47,7 @@ public interface LimitUsageStorage {
    * @param resource The resource name on which the limit is enforced
    * @param limitName The name of the limit
    * @param property The name of the property used in the limit
+   * @param distributed If the limit is going to be shared when using a cached storage
    * @param expiration The duration of the limit before it is reset
    * @param eventTimestamp The Instant at which the event was recorded
    * @return A Pair of the limit and its current count
@@ -55,9 +56,10 @@ public interface LimitUsageStorage {
       String resource,
       String limitName,
       String property,
+      boolean distributed,
       Duration expiration,
       Instant eventTimestamp) {
-    return addAndGet(resource, limitName, property, expiration, eventTimestamp, 1);
+    return addAndGet(resource, limitName, property, distributed, expiration, eventTimestamp, 1);
   }
 
   /**
@@ -66,6 +68,7 @@ public interface LimitUsageStorage {
    * @param resource The resource name on which the limit is enforced
    * @param limitName The name of the limit
    * @param property The name of the property used in the limit
+   * @param distributed If the limit is going to be shared when using a cached storage
    * @param expiration The duration of the limit before it is reset
    * @param eventTimestamp The Instant at which the event was recorded
    * @param cost The cost the query
@@ -75,6 +78,7 @@ public interface LimitUsageStorage {
       String resource,
       String limitName,
       String property,
+      boolean distributed,
       Duration expiration,
       Instant eventTimestamp,
       int cost) {
@@ -83,6 +87,7 @@ public interface LimitUsageStorage {
             .withResource(resource)
             .withLimitName(limitName)
             .withProperty(property)
+            .withDistributed(distributed)
             .withExpiration(expiration)
             .withEventTimestamp(eventTimestamp)
             .withCost(cost)

@@ -49,6 +49,7 @@ import com.coveo.spillway.trigger.LimitTrigger;
 public class Limit<T> {
 
   private LimitDefinition definition;
+  private boolean distributed;
   private Function<T, String> propertyExtractor;
   private Set<LimitOverride> limitOverrides;
 
@@ -56,10 +57,12 @@ public class Limit<T> {
 
   /*package*/ Limit(
       LimitDefinition definition,
+      boolean distributed,
       Function<T, String> propertyExtractor,
       Set<LimitOverride> limitOverrides,
       List<LimitTrigger> limitTriggers) {
     this.definition = definition;
+    this.distributed = distributed;
     this.propertyExtractor = propertyExtractor;
     this.limitOverrides = limitOverrides;
     this.limitTriggers = limitTriggers;
@@ -85,6 +88,17 @@ public class Limit<T> {
     return findLimitOverride(context)
         .map(p -> new LimitDefinition(getName(), p.getCapacity(), p.getExpiration()))
         .orElse(getDefinition());
+  }
+
+  /**
+   * Simple getter for the {@link Limit}'s distributed flag.
+   * This flag is used to indicate if the limit will be shared between nodes.
+   * This is only relevant if using a storage with a cache.
+   *
+   * @return The value of the flag
+   */
+  public boolean isDistributed() {
+    return distributed;
   }
 
   /**

@@ -59,22 +59,23 @@ public class InMemoryStorageTest {
   @Test
   public void canAddLargeValues() {
     int result =
-        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
     assertThat(result).isEqualTo(5);
   }
 
   @Test
   public void canAddLargeValuesToExisitingCounters() {
-    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     int result =
-        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
   }
 
   @Test
   public void expiredEntriesAreRemovedFromDebugInfo() {
-    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(2), Instant.now());
+    storage.incrementAndGet(
+        RESOURCE1, LIMIT1, PROPERTY1, true, Duration.ofSeconds(2), Instant.now());
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
     assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
 

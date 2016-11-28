@@ -35,7 +35,7 @@ import com.google.common.base.Stopwatch;
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
 
-@Ignore("Functional tests, remove ignore to run them")
+//@Ignore("Functional tests, remove ignore to run them")
 public class SpillwayFunctionalTests {
 
   private static final String RESOURCE1 = "someResource";
@@ -108,7 +108,7 @@ public class SpillwayFunctionalTests {
   public void expiredKeysCompletelyDisappear() throws InterruptedException {
     int result1 =
         storage
-            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, Duration.ofSeconds(1), TIMESTAMP)
             .getValue();
 
     assertThat(result1).isEqualTo(1);
@@ -125,7 +125,8 @@ public class SpillwayFunctionalTests {
     Pair<LimitKey, Integer> lastResponse = null;
     Stopwatch stopwatch = Stopwatch.createStarted();
     for (int i = 0; i < numberOfCalls; i++) {
-      lastResponse = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      lastResponse =
+          storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
     stopwatch.stop();
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
@@ -146,7 +147,7 @@ public class SpillwayFunctionalTests {
     Stopwatch stopwatch = Stopwatch.createStarted();
     for (int i = 0; i < numberOfCalls; i++) {
       lastResponse =
-          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
     asyncStorage.shutdownStorage();
     asyncStorage.awaitTermination(Duration.ofMinutes(1));
@@ -167,13 +168,13 @@ public class SpillwayFunctionalTests {
         new AsyncBatchLimitUsageStorage(storage, Duration.ofSeconds(5));
     int numberOfCalls = 1000000;
     for (int i = 0; i < numberOfCalls; i++) {
-      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
 
     Thread.sleep(5000);
 
     for (int i = 0; i < numberOfCalls; i++) {
-      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
 
     Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();

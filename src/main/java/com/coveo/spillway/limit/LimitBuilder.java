@@ -57,6 +57,7 @@ public class LimitBuilder<T> {
   private String limitName;
   private Duration limitExpiration;
   private int limitCapacity;
+  private boolean distributed = true;
 
   private Function<T, String> propertyExtractor;
   private List<LimitTrigger> triggers = new ArrayList<>();
@@ -79,6 +80,11 @@ public class LimitBuilder<T> {
    */
   public LimitBuilder<T> per(Duration expiration) {
     this.limitExpiration = expiration;
+    return this;
+  }
+
+  public LimitBuilder<T> withDistributed(boolean distributed) {
+    this.distributed = distributed;
     return this;
   }
 
@@ -130,6 +136,7 @@ public class LimitBuilder<T> {
   public Limit<T> build() {
     return new Limit<>(
         new LimitDefinition(limitName, limitCapacity, limitExpiration),
+        distributed,
         propertyExtractor,
         overrides,
         triggers);

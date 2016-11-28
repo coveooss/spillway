@@ -86,7 +86,9 @@ public class RedisStorageTest {
   @Test
   public void canIncrement() {
     int counter =
-        storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
+        storage
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP)
+            .getValue();
     assertThat(counter).isEqualTo(1);
   }
 
@@ -94,7 +96,9 @@ public class RedisStorageTest {
   public void canIncrementMultipleTimes() {
     for (int i = 0; i < 10; i++) {
       int result =
-          storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP).getValue();
+          storage
+              .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP)
+              .getValue();
       assertThat(result).isEqualTo(i + 1);
     }
   }
@@ -103,14 +107,14 @@ public class RedisStorageTest {
   public void keysWithDifferentTimeStampGoInDifferentBuckets() {
     int result1 =
         storage
-            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, Duration.ofSeconds(1), TIMESTAMP)
             .getValue();
     assertThat(result1).isEqualTo(1);
 
     int result2 =
         storage
             .incrementAndGet(
-                RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP.plusSeconds(1))
+                RESOURCE1, LIMIT1, PROPERTY1, true, Duration.ofSeconds(1), TIMESTAMP.plusSeconds(1))
             .getValue();
     assertThat(result2).isEqualTo(1);
   }
@@ -118,7 +122,7 @@ public class RedisStorageTest {
   @Test
   public void canDebugLimitCounters() {
     for (int i = 0; i < 10; i++) {
-      storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1 + i, EXPIRATION, TIMESTAMP);
+      storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1 + i, true, EXPIRATION, TIMESTAMP);
     }
     Map<LimitKey, Integer> limitCounters = storage.debugCurrentLimitCounters();
     assertThat(limitCounters).hasSize(10);
@@ -135,15 +139,15 @@ public class RedisStorageTest {
   @Test
   public void canAddLargeValues() {
     int result =
-        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
     assertThat(result).isEqualTo(5);
   }
 
   @Test
   public void canAddLargeValuesToExisitingCounters() {
-    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+    storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     int result =
-        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP, 5).getValue();
+        storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
   }
