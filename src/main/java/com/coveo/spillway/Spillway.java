@@ -130,20 +130,7 @@ public class Spillway<T> {
 
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
     Instant now = Instant.now(clock);
-    List<AddAndGetRequest> requests =
-        limits
-            .stream()
-            .map(
-                limit
-                    -> new AddAndGetRequest.Builder()
-                        .withResource(resource)
-                        .withLimitName(limit.getName())
-                        .withProperty(limit.getProperty(context))
-                        .withExpiration(limit.getExpiration(context))
-                        .withEventTimestamp(now)
-                        .withCost(cost)
-                        .build())
-            .collect(Collectors.toList());
+    List<AddAndGetRequest> requests = buildRequestsFromLimits(context, 0, now);
 
     Map<LimitKey, Integer> results = storage.addAndGet(requests);
 
@@ -157,9 +144,9 @@ public class Spillway<T> {
                 .findFirst()
                 .get();
 
-        handleTriggers(context, cost, result.getValue(), limit);
+        handleTriggers(context, cost, result.getValue() + cost, limit);
 
-        if (result.getValue() > limit.getCapacity(context)) {
+        if (result.getValue() + cost > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
         }
       }
@@ -172,7 +159,28 @@ public class Spillway<T> {
           results);
     }
 
+    if (exceededLimits.isEmpty()) {
+      requests = buildRequestsFromLimits(context, cost, now);
+      storage.addAndGet(requests);
+    }
+
     return exceededLimits;
+  }
+
+  private List<AddAndGetRequest> buildRequestsFromLimits(T context, int cost, Instant now) {
+    return limits
+        .stream()
+        .map(
+            limit
+                -> new AddAndGetRequest.Builder()
+                    .withResource(resource)
+                    .withLimitName(limit.getName())
+                    .withProperty(limit.getProperty(context))
+                    .withExpiration(limit.getExpiration(context))
+                    .withEventTimestamp(now)
+                    .withCost(cost)
+                    .build())
+        .collect(Collectors.toList());
   }
 
   private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {

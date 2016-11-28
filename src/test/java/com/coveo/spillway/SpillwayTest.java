@@ -92,6 +92,7 @@ public class SpillwayTest {
   private User gina = new User("gina", "127.0.0.1");
 
   private LimitUsageStorage mockedStorage;
+  private LimitUsageStorage inMemoryStorage;
   private Clock clock;
 
   private SpillwayFactory inMemoryFactory;
@@ -100,7 +101,8 @@ public class SpillwayTest {
   @Before
   public void setup() {
     clock = mock(Clock.class);
-    inMemoryFactory = new SpillwayFactory(new InMemoryStorage(), clock);
+    inMemoryStorage = new InMemoryStorage();
+    inMemoryFactory = new SpillwayFactory(inMemoryStorage, clock);
 
     mockedStorage = mock(LimitUsageStorage.class);
     mockedFactory = new SpillwayFactory(mockedStorage);
@@ -230,6 +232,20 @@ public class SpillwayTest {
     when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
 
     assertThat(spillway.tryCall(john)).isTrue();
+  }
+
+  @Test
+  public void capacityNotIncrementedIfLimitTriggered() throws Exception {
+    Limit<User> limit1 =
+        LimitBuilder.of("perUser", User::getName).to(0).per(Duration.ofHours(1)).build();
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", limit1);
+
+    assertThat(spillway.tryCall(john)).isFalse();
+
+    Map<LimitKey, Integer> counters = inMemoryStorage.debugCurrentLimitCounters();
+
+    assertThat(counters).hasSize(1);
+    counters.values().forEach(value -> assertThat(value).isEqualTo(0));
   }
 
   @Test
