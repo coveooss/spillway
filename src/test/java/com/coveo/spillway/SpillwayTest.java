@@ -213,8 +213,8 @@ public class SpillwayTest {
       fail("Expected an exception!");
     } catch (SpillwayLimitExceededException ex) {
       assertThat(ex.getExceededLimits()).hasSize(2);
-      assertThat(ex.getExceededLimits().get(0)).isEqualTo(userLimit.getDefinition());
-      assertThat(ex.getExceededLimits().get(1)).isEqualTo(ipLimit.getDefinition());
+      assertThat(ex.getExceededLimits()).contains(userLimit.getDefinition());
+      assertThat(ex.getExceededLimits()).contains(ipLimit.getDefinition());
       assertThat(ex.getContext()).isEqualTo(john);
     }
   }
