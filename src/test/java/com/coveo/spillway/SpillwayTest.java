@@ -222,8 +222,7 @@ public class SpillwayTest {
 
     Map<LimitKey, Integer> counters = inMemoryStorage.debugCurrentLimitCounters();
 
-    assertThat(counters).hasSize(1);
-    counters.values().forEach(value -> assertThat(value).isEqualTo(0));
+    assertThat(counters.values()).containsExactly(0);
   }
 
   @Test
