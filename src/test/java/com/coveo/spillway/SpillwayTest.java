@@ -1,7 +1,7 @@
 package com.coveo.spillway;
 
 import com.coveo.spillway.exception.SpillwayLimitExceededException;
-import com.coveo.spillway.exception.SpillwayLimitWithSameNameException;
+import com.coveo.spillway.exception.SpillwayLimitsWithSameNameException;
 import com.coveo.spillway.limit.Limit;
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
@@ -99,7 +99,7 @@ public class SpillwayTest {
     assertThat(spillway.tryCall(john)).isFalse(); // Third tryCall fails
   }
 
-  @Test(expected = SpillwayLimitWithSameNameException.class)
+  @Test(expected = SpillwayLimitsWithSameNameException.class)
   public void multipleLimitsWithOverlap() throws Exception {
     Limit<User> limit1 =
         LimitBuilder.of("perUser", User::getName).to(5).per(Duration.ofHours(1)).build();
