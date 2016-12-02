@@ -70,12 +70,20 @@ public class SpillwayFactory {
   @SafeVarargs
   public final <T> Spillway<T> enforce(String resource, Limit<T>... limits)
       throws SpillwayLimitsWithSameNameException {
-    Map<String, Long> countOfDistinctLimits = Arrays.stream(limits).collect(Collectors.groupingBy(Limit::getName, Collectors.counting()));
+    Map<String, Long> countOfDistinctLimits =
+        Arrays.stream(limits).collect(Collectors.groupingBy(Limit::getName, Collectors.counting()));
 
-    List<String> duplicateNames = countOfDistinctLimits.entrySet().stream().filter(entry -> entry.getValue() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
-    
+    List<String> duplicateNames =
+        countOfDistinctLimits
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getValue() > 1)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+
     if (!duplicateNames.isEmpty()) {
-      throw new SpillwayLimitsWithSameNameException(duplicateNames.stream().collect(Collectors.joining(StringUtils.SPACE)));
+      throw new SpillwayLimitsWithSameNameException(
+          duplicateNames.stream().collect(Collectors.joining(StringUtils.SPACE)));
     }
 
     return new Spillway<>(clock, storage, resource, limits);
