@@ -39,6 +39,8 @@ public class LimitKey {
   private String property;
   private Instant bucket;
 
+  public LimitKey() {}
+
   public LimitKey(String resource, String limitName, String property, Instant bucket) {
     this.resource = resource;
     this.limitName = limitName;
@@ -54,12 +56,22 @@ public class LimitKey {
     this.resource = resource;
   }
 
+  public LimitKey withResource(String resource) {
+    setResource(resource);
+    return this;
+  }
+
   public String getProperty() {
     return property;
   }
 
   public void setProperty(String property) {
     this.property = property;
+  }
+
+  public LimitKey withProperty(String property) {
+    setProperty(property);
+    return this;
   }
 
   public Instant getBucket() {
@@ -70,12 +82,22 @@ public class LimitKey {
     this.bucket = bucket;
   }
 
+  public LimitKey withBucket(Instant bucket) {
+    setBucket(bucket);
+    return this;
+  }
+
   public String getLimitName() {
     return limitName;
   }
 
   public void setLimitName(String limitName) {
     this.limitName = limitName;
+  }
+
+  public LimitKey withLimitName(String limitName) {
+    setLimitName(limitName);
+    return this;
   }
 
   @Override

@@ -12,9 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -30,9 +29,9 @@ import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.RedisStorage;
 import com.coveo.spillway.storage.RedisStorageTest;
+import com.coveo.spillway.storage.sliding.AsyncSlidingLimitUsageStorage;
 import com.google.common.base.Stopwatch;
 
-import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServer;
 
 @Ignore("Functional tests, remove ignore to run them")
@@ -51,12 +50,11 @@ public class SpillwayFunctionalTests {
 
   private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
 
-  private static RedisServer redisServer;
-  private static Jedis jedis;
-  private static RedisStorage storage;
+  private RedisServer redisServer;
+  private RedisStorage storage;
 
-  @BeforeClass
-  public static void startRedis() throws IOException {
+  @Before
+  public void setup() throws IOException {
     try {
       redisServer = new RedisServer(6389);
     } catch (IOException e) {
@@ -64,19 +62,15 @@ public class SpillwayFunctionalTests {
       throw e;
     }
     redisServer.start();
-    jedis = new Jedis("localhost", 6389);
-    storage = new RedisStorage(jedis);
-  }
 
-  @AfterClass
-  public static void stopRedis() {
-    redisServer.stop();
-  }
-
-  @Before
-  public void setup() {
-    jedis.flushDB();
+    storage = new RedisStorage("localhost", 6389);
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
+  }
+
+  @After
+  public void stopRedis() {
+    redisServer.stop();
+    storage.close();
   }
 
   @Test
@@ -170,7 +164,7 @@ public class SpillwayFunctionalTests {
       asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
     }
 
-    Thread.sleep(5000);
+    Thread.sleep(6000);
 
     for (int i = 0; i < numberOfCalls; i++) {
       asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
@@ -186,6 +180,45 @@ public class SpillwayFunctionalTests {
               assertThat(entry.getValue()).isEqualTo(numberOfCalls);
             });
 
+    cacheCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
+            });
+  }
+
+  @Test
+  public void asyncSlidingStorageTest() throws Exception {
+    Instant now = Instant.now();
+
+    AsyncSlidingLimitUsageStorage asyncStorage =
+        new AsyncSlidingLimitUsageStorage(
+            storage, Duration.ofSeconds(2), Duration.ofMinutes(10), Duration.ofSeconds(20));
+
+    int numberOfCalls = 10000;
+    for (int i = 0; i < numberOfCalls; i++) {
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, now);
+    }
+
+    Thread.sleep(6000);
+
+    for (int i = 0; i < numberOfCalls; i++) {
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, now);
+    }
+
+    Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();
+    Map<LimitKey, Integer> cacheCounters = asyncStorage.debugCacheLimitCounters();
+
+    assertThat(currentCounters).isNotEmpty();
+    currentCounters
+        .entrySet()
+        .forEach(
+            entry -> {
+              assertThat(entry.getValue()).isEqualTo(numberOfCalls);
+            });
+
+    assertThat(cacheCounters).isNotEmpty();
     cacheCounters
         .entrySet()
         .forEach(
