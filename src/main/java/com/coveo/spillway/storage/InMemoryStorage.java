@@ -64,7 +64,7 @@ public class InMemoryStorage implements LimitUsageStorage {
       LimitKey limitKey = LimitKey.fromRequest(request);
 
       Map<LimitKey, Capacity> mapWithThisExpiration =
-          map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
+          map.computeIfAbsent(expirationDate, (key) -> new ConcurrentHashMap<>());
       Capacity counter = mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
       updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
     }
@@ -88,7 +88,7 @@ public class InMemoryStorage implements LimitUsageStorage {
   public void overrideKeys(List<OverrideKeyRequest> overrides) {
     for (OverrideKeyRequest override : overrides) {
       Map<LimitKey, Capacity> mapWithThisExpiration =
-          map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>());
+          map.computeIfAbsent(override.getExpirationDate(), k -> new ConcurrentHashMap<>());
       mapWithThisExpiration.put(override.getLimitKey(), new Capacity(override.getNewValue()));
     }
     removeExpiredEntries();

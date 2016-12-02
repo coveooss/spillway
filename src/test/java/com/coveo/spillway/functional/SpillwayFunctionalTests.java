@@ -31,6 +31,7 @@ import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.RedisStorage;
 import com.coveo.spillway.storage.RedisStorageTest;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Range;
 
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
@@ -45,6 +46,7 @@ public class SpillwayFunctionalTests {
   private static final Instant TIMESTAMP = Instant.now();
 
   private static final int ONE_MILLION = 1000000;
+  private static final double MARGIN_OF_ERROR = 0.00001;
   private static final String AN_IP = "127.0.0.1";
 
   private SpillwayFactory inMemoryFactory;
@@ -88,8 +90,8 @@ public class SpillwayFunctionalTests {
     ExecutorService threadPool = Executors.newFixedThreadPool(100);
 
     AtomicInteger counter = new AtomicInteger(0);
-    // We do ONE MILLION + 100 iterations and check to make sure that the counter was not incremented more than expected.
-    for (int i = 0; i < ONE_MILLION + 100; i++) {
+    // We do 2 * ONE MILLION iterations and check to make sure that the counter was not incremented more than expected.
+    for (int i = 0; i < 2 * ONE_MILLION; i++) {
       threadPool.submit(
           () -> {
             boolean canCall = spillway.tryCall(AN_IP);
@@ -101,7 +103,7 @@ public class SpillwayFunctionalTests {
     threadPool.shutdown();
     threadPool.awaitTermination(1, TimeUnit.MINUTES);
 
-    assertThat(counter.get()).isAtMost(ONE_MILLION + 10);
+    assertThat(counter.get()).isIn(inErrorMargin(ONE_MILLION, MARGIN_OF_ERROR));
   }
 
   @Test
@@ -193,5 +195,14 @@ public class SpillwayFunctionalTests {
             entry -> {
               assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
             });
+  }
+
+  private Range<Integer> inErrorMargin(Integer expectedValue, double marginOfError) {
+    marginOfError += 1;
+
+    Integer lowerBound = (int) (expectedValue / marginOfError);
+    Integer upperBound = (int) (expectedValue * marginOfError);
+
+    return Range.closed(lowerBound, upperBound);
   }
 }
