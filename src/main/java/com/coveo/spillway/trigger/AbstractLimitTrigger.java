@@ -22,11 +22,11 @@
  */
 package com.coveo.spillway.trigger;
 
-import java.time.Duration;
 import java.time.Instant;
 
 import com.coveo.spillway.limit.LimitBuilder;
 import com.coveo.spillway.limit.LimitDefinition;
+import com.coveo.spillway.limit.utils.LimitUtils;
 
 /**
  * Base abstract class for our triggers that implements {@link LimitTrigger}.
@@ -69,17 +69,12 @@ public abstract class AbstractLimitTrigger implements LimitTrigger {
       Instant timestamp,
       int currentLimitValue,
       LimitDefinition limitDefinition) {
-    Instant currentBucket = calculateBucket(timestamp, limitDefinition.getExpiration());
+    Instant currentBucket = LimitUtils.calculateBucket(timestamp, limitDefinition.getExpiration());
 
     if (triggered(context, currentLimitValue, limitDefinition)
         && currentBucket.isAfter(triggeredBucket)) {
       triggeredBucket = currentBucket;
       callback.trigger(limitDefinition, context);
     }
-  }
-
-  private Instant calculateBucket(Instant timestamp, Duration limitDuration) {
-    return Instant.ofEpochMilli(
-        (timestamp.toEpochMilli() / limitDuration.toMillis()) * limitDuration.toMillis());
   }
 }

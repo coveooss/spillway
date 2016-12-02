@@ -25,6 +25,8 @@ package com.coveo.spillway.storage.utils;
 import java.time.Duration;
 import java.time.Instant;
 
+import com.coveo.spillway.limit.utils.LimitUtils;
+
 /**
  * Container of properties necessary to increase the current current value of
  * a limit in the storage and return it.
@@ -87,9 +89,7 @@ public class AddAndGetRequest {
     expiration = builder.expiration;
     eventTimestamp = builder.eventTimestamp;
     cost = builder.cost;
-    bucket =
-        Instant.ofEpochMilli(
-            (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
+    bucket = LimitUtils.calculateBucket(eventTimestamp, expiration);
   }
 
   /**
