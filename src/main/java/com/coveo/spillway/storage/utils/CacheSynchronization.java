@@ -24,6 +24,7 @@ package com.coveo.spillway.storage.utils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map.Entry;
 import java.util.TimerTask;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -63,34 +64,36 @@ public class CacheSynchronization extends TimerTask {
             instantEntry
                 .getValue()
                 .entrySet()
-                .forEach(
-                    valueEntry -> {
-                      int cost = valueEntry.getValue().getDelta();
-
-                      LimitKey limitKey = valueEntry.getKey();
-
-                      Duration duration =
-                          Duration.ofMillis(
-                              expiration.toEpochMilli() - limitKey.getBucket().toEpochMilli());
-
-                      AddAndGetRequest request =
-                          new AddAndGetRequest.Builder()
-                              .withResource(limitKey.getResource())
-                              .withLimitName(limitKey.getLimitName())
-                              .withProperty(limitKey.getProperty())
-                              .withExpiration(duration)
-                              .withEventTimestamp(limitKey.getBucket())
-                              .withCost(cost)
-                              .build();
-
-                      Pair<LimitKey, Integer> reponse = storage.addAndGet(request);
-
-                      valueEntry.getValue().substractAndGet(cost);
-                      valueEntry.getValue().setTotal(reponse.getValue());
-                    });
+                .stream()
+                .filter(valueEntry -> valueEntry.getKey().isDistributed())
+                .forEach(valueEntry -> applyOnEachEntry(valueEntry, expiration));
           } catch (Exception e) {
             logger.warn("Exception during synchronization, ignoring.", e);
           }
         });
+  }
+
+  private void applyOnEachEntry(Entry<LimitKey, Capacity> entry, Instant expiration) {
+    LimitKey limitKey = entry.getKey();
+
+    int cost = entry.getValue().getDelta();
+
+    Duration duration =
+        Duration.ofMillis(expiration.toEpochMilli() - limitKey.getBucket().toEpochMilli());
+
+    AddAndGetRequest request =
+        new AddAndGetRequest.Builder()
+            .withResource(limitKey.getResource())
+            .withLimitName(limitKey.getLimitName())
+            .withProperty(limitKey.getProperty())
+            .withExpiration(duration)
+            .withEventTimestamp(limitKey.getBucket())
+            .withCost(cost)
+            .build();
+
+    Pair<LimitKey, Integer> reponse = storage.addAndGet(request);
+
+    entry.getValue().substractAndGet(cost);
+    entry.getValue().setTotal(reponse.getValue());
   }
 }

@@ -31,6 +31,7 @@ import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.RedisStorage;
 import com.coveo.spillway.storage.RedisStorageTest;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Range;
 
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
@@ -45,6 +46,7 @@ public class SpillwayFunctionalTests {
   private static final Instant TIMESTAMP = Instant.now();
 
   private static final int ONE_MILLION = 1000000;
+  private static final double MARGIN_OF_ERROR = 0.00001;
   private static final String AN_IP = "127.0.0.1";
 
   private SpillwayFactory inMemoryFactory;
@@ -80,7 +82,7 @@ public class SpillwayFunctionalTests {
   }
 
   @Test
-  public void oneMillionConcurrentRequestsWith100Threads() throws InterruptedException {
+  public void oneMillionConcurrentRequestsWith100Threads() throws Exception {
     Limit<String> ipLimit =
         LimitBuilder.of("perIp").to(ONE_MILLION).per(Duration.ofHours(1)).build();
     Spillway<String> spillway = inMemoryFactory.enforce("testResource", ipLimit);
@@ -88,8 +90,8 @@ public class SpillwayFunctionalTests {
     ExecutorService threadPool = Executors.newFixedThreadPool(100);
 
     AtomicInteger counter = new AtomicInteger(0);
-    // We do ONE MILLION + 1 iterations and check to make sure that the counter was not incremented more than expected.
-    for (int i = 0; i < ONE_MILLION + 1; i++) {
+    // We do 2 * ONE MILLION iterations and check to make sure that the counter was not incremented more than expected.
+    for (int i = 0; i < 2 * ONE_MILLION; i++) {
       threadPool.submit(
           () -> {
             boolean canCall = spillway.tryCall(AN_IP);
@@ -101,14 +103,14 @@ public class SpillwayFunctionalTests {
     threadPool.shutdown();
     threadPool.awaitTermination(1, TimeUnit.MINUTES);
 
-    assertThat(counter.get()).isEqualTo(ONE_MILLION);
+    assertThat(counter.get()).isIn(inErrorMargin(ONE_MILLION, MARGIN_OF_ERROR));
   }
 
   @Test
   public void expiredKeysCompletelyDisappear() throws InterruptedException {
     int result1 =
         storage
-            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, Duration.ofSeconds(1), TIMESTAMP)
+            .incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, Duration.ofSeconds(1), TIMESTAMP)
             .getValue();
 
     assertThat(result1).isEqualTo(1);
@@ -125,7 +127,8 @@ public class SpillwayFunctionalTests {
     Pair<LimitKey, Integer> lastResponse = null;
     Stopwatch stopwatch = Stopwatch.createStarted();
     for (int i = 0; i < numberOfCalls; i++) {
-      lastResponse = storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      lastResponse =
+          storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
     stopwatch.stop();
     long elapsedMs = stopwatch.elapsed(TimeUnit.MILLISECONDS);
@@ -146,7 +149,7 @@ public class SpillwayFunctionalTests {
     Stopwatch stopwatch = Stopwatch.createStarted();
     for (int i = 0; i < numberOfCalls; i++) {
       lastResponse =
-          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+          asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
     asyncStorage.shutdownStorage();
     asyncStorage.awaitTermination(Duration.ofMinutes(1));
@@ -167,13 +170,13 @@ public class SpillwayFunctionalTests {
         new AsyncBatchLimitUsageStorage(storage, Duration.ofSeconds(5));
     int numberOfCalls = 1000000;
     for (int i = 0; i < numberOfCalls; i++) {
-      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
 
     Thread.sleep(5000);
 
     for (int i = 0; i < numberOfCalls; i++) {
-      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, EXPIRATION, TIMESTAMP);
+      asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
 
     Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();
@@ -192,5 +195,14 @@ public class SpillwayFunctionalTests {
             entry -> {
               assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
             });
+  }
+
+  private Range<Integer> inErrorMargin(Integer expectedValue, double marginOfError) {
+    marginOfError += 1;
+
+    Integer lowerBound = (int) (expectedValue / marginOfError);
+    Integer upperBound = (int) (expectedValue * marginOfError);
+
+    return Range.closed(lowerBound, upperBound);
   }
 }

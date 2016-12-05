@@ -20,29 +20,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.coveo.spillway.limit;
-
-import org.junit.Test;
-
-import com.coveo.spillway.limit.Limit;
-import com.coveo.spillway.limit.LimitDefinition;
+package com.coveo.spillway.limit.utils;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.function.Function;
+import java.time.Instant;
 
-import static com.google.common.truth.Truth.assertThat;
+import com.coveo.spillway.limit.Limit;
 
-public class LimitTest {
-
-  @Test
-  public void toStringIsTheLimitDefinitionToString() {
-    LimitDefinition limitDefinition = new LimitDefinition("potato", 5, Duration.ofDays(100));
-    Limit<String> limit =
-        new Limit<>(
-            limitDefinition, false, Function.identity(), new HashSet<>(), new ArrayList<>());
-
-    assertThat(limit.toString()).isEqualTo(limitDefinition.toString());
+/**
+ * Simple utility class for {@link Limit}s.
+ *
+ * @author Emile Fugulin
+ * @since 2.0.0
+ */
+public class LimitUtils {
+  public static Instant calculateBucket(Instant timestamp, Duration limitDuration) {
+    return Instant.ofEpochMilli(
+        (timestamp.toEpochMilli() / limitDuration.toMillis()) * limitDuration.toMillis());
   }
 }

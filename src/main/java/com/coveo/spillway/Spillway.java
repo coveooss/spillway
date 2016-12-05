@@ -38,10 +38,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 /**
@@ -130,35 +130,25 @@ public class Spillway<T> {
 
   private List<LimitDefinition> getExceededLimits(T context, int cost) {
     Instant now = Instant.now(clock);
-    List<AddAndGetRequest> requests =
-        limits
-            .stream()
-            .map(
-                limit
-                    -> new AddAndGetRequest.Builder()
-                        .withResource(resource)
-                        .withLimitName(limit.getName())
-                        .withProperty(limit.getProperty(context))
-                        .withExpiration(limit.getExpiration(context))
-                        .withEventTimestamp(now)
-                        .withCost(cost)
-                        .build())
-            .collect(Collectors.toList());
+    List<AddAndGetRequest> requests = buildRequestsFromLimits(context, 0, now);
 
-    Collection<Integer> results = storage.addAndGet(requests).values();
+    Map<LimitKey, Integer> results = storage.addAndGet(requests);
 
     List<LimitDefinition> exceededLimits = new ArrayList<>();
     if (results.size() == limits.size()) {
-      int i = 0;
-      for (Integer result : results) {
-        Limit<T> limit = limits.get(i);
+      for (Entry<LimitKey, Integer> result : results.entrySet()) {
+        Limit<T> limit =
+            limits
+                .stream()
+                .filter(entry -> entry.getName().equals(result.getKey().getLimitName()))
+                .findFirst()
+                .get();
 
-        handleTriggers(context, cost, result, limit);
+        handleTriggers(context, cost, now, result.getValue() + cost, limit);
 
-        if (result > limit.getCapacity(context)) {
+        if (result.getValue() + cost > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
         }
-        i++;
       }
     } else {
       logger.error(
@@ -169,13 +159,37 @@ public class Spillway<T> {
           results);
     }
 
+    if (exceededLimits.isEmpty()) {
+      requests = buildRequestsFromLimits(context, cost, now);
+      storage.addAndGet(requests);
+    }
+
     return exceededLimits;
   }
 
-  private void handleTriggers(T context, int cost, int currentValue, Limit<T> limit) {
+  private List<AddAndGetRequest> buildRequestsFromLimits(T context, int cost, Instant now) {
+    return limits
+        .stream()
+        .map(
+            limit
+                -> new AddAndGetRequest.Builder()
+                    .withResource(resource)
+                    .withLimitName(limit.getName())
+                    .withProperty(limit.getProperty(context))
+                    .withDistributed(limit.isDistributed())
+                    .withExpiration(limit.getExpiration(context))
+                    .withEventTimestamp(now)
+                    .withCost(cost)
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  private void handleTriggers(
+      T context, int cost, Instant timestamp, int currentValue, Limit<T> limit) {
     for (LimitTrigger trigger : limit.getLimitTriggers(context)) {
       try {
-        trigger.callbackIfRequired(context, cost, currentValue, limit.getDefinition(context));
+        trigger.callbackIfRequired(
+            context, cost, timestamp, currentValue, limit.getDefinition(context));
       } catch (RuntimeException ex) {
         logger.warn(
             "Trigger callback {} for limit {} threw an exception. Ignoring.", trigger, limit, ex);

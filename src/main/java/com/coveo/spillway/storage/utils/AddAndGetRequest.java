@@ -25,6 +25,8 @@ package com.coveo.spillway.storage.utils;
 import java.time.Duration;
 import java.time.Instant;
 
+import com.coveo.spillway.limit.utils.LimitUtils;
+
 /**
  * Container of properties necessary to increase the current current value of
  * a limit in the storage and return it.
@@ -40,6 +42,7 @@ public class AddAndGetRequest {
   private String resource;
   private String limitName;
   private String property;
+  private boolean distributed;
   private Duration expiration;
   private Instant eventTimestamp;
   private int cost;
@@ -56,6 +59,10 @@ public class AddAndGetRequest {
 
   public String getProperty() {
     return property;
+  }
+
+  public boolean isDistributed() {
+    return distributed;
   }
 
   public Duration getExpiration() {
@@ -78,12 +85,11 @@ public class AddAndGetRequest {
     resource = builder.resource;
     limitName = builder.limitName;
     property = builder.property;
+    distributed = builder.distributed;
     expiration = builder.expiration;
     eventTimestamp = builder.eventTimestamp;
     cost = builder.cost;
-    bucket =
-        Instant.ofEpochMilli(
-            (eventTimestamp.toEpochMilli() / expiration.toMillis()) * expiration.toMillis());
+    bucket = LimitUtils.calculateBucket(eventTimestamp, expiration);
   }
 
   /**
@@ -104,6 +110,7 @@ public class AddAndGetRequest {
     private String resource;
     private String limitName;
     private String property;
+    private boolean distributed;
     private Duration expiration;
     private Instant eventTimestamp;
     private int cost = 1;
@@ -131,6 +138,11 @@ public class AddAndGetRequest {
 
     public Builder withProperty(String val) {
       property = val;
+      return this;
+    }
+
+    public Builder withDistributed(boolean val) {
+      distributed = val;
       return this;
     }
 

@@ -56,11 +56,9 @@ public class PercentageThresholdTrigger extends AbstractLimitTrigger {
    */
   @Override
   protected <T> boolean triggered(
-      T context, int cost, int currentLimitValue, LimitDefinition limitDefinition) {
-    int previousLimitValue = currentLimitValue - cost;
-    double previousPercentage = previousLimitValue / (double) limitDefinition.getCapacity();
+      T context, int currentLimitValue, LimitDefinition limitDefinition) {
     double currentPercentage = currentLimitValue / (double) limitDefinition.getCapacity();
 
-    return currentPercentage > triggerPercentage && previousPercentage <= triggerPercentage;
+    return currentPercentage > triggerPercentage;
   }
 }

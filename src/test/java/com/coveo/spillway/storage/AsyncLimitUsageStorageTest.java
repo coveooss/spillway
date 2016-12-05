@@ -59,6 +59,7 @@ public class AsyncLimitUsageStorageTest {
           .withResource(RESOURCE)
           .withProperty(PROPERTY)
           .withLimitName(LIMITNAME)
+          .withDistributed(true)
           .withEventTimestamp(INSTANT)
           .withCost(1)
           .withExpiration(EXPIRATION)

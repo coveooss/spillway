@@ -59,22 +59,16 @@ public class PercentageThresholdTriggerTest {
 
   @Test
   public void underThresholdDoesNotTrigger() {
-    assertThat(trigger.triggered(null, 1, 10, limitDef)).isFalse();
+    assertThat(trigger.triggered(null, 10, limitDef)).isFalse();
   }
 
   @Test
   public void justUnderThresholdDoesNotTrigger() {
-    assertThat(trigger.triggered(null, 1, 50, limitDef)).isFalse();
+    assertThat(trigger.triggered(null, 50, limitDef)).isFalse();
   }
 
   @Test
   public void overThresholdTriggers() {
-    assertThat(trigger.triggered(null, 1, 51, limitDef)).isTrue();
-  }
-
-  @Test
-  public void alreadyOverThresholdDoesNotTrigger() {
-
-    assertThat(trigger.triggered(null, 1, 52, limitDef)).isFalse();
+    assertThat(trigger.triggered(null, 51, limitDef)).isTrue();
   }
 }
