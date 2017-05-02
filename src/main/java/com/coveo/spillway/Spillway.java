@@ -110,7 +110,7 @@ public class Spillway<T> {
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
-   * @return True if one the enforced limit is exceeded, false otherwise
+   * @return False if one the enforced limit is exceeded, true otherwise
    */
   public boolean tryCall(T context) {
     return tryCall(context, 1);
@@ -122,7 +122,7 @@ public class Spillway<T> {
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
    * @param cost The cost of the query
-   * @return True if one the enforced limit is exceeded, false otherwise
+   * @return False if one the enforced limit is exceeded, true otherwise
    */
   public boolean tryCall(T context, int cost) {
     return getExceededLimits(context, cost).isEmpty();
