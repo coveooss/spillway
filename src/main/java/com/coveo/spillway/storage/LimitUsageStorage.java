@@ -115,6 +115,21 @@ public interface LimitUsageStorage {
   Map<LimitKey, Integer> debugCurrentLimitCounters();
 
   /**
+   * @return A Map of all the enforced limits for a resource and their current count
+   */
+  Map<LimitKey, Integer> getCurrentLimitCounters(String resource);
+
+  /**
+   * @return A Map of a specific limit for a resource and its current count
+   */
+  Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitKey);
+
+  /**
+   * @return A Map of a specific limit for a resource and its current count
+   */
+  Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitKey, String property);
+
+  /**
    * Call this method to close the storage when done with it.
    * This method is NOT idempotent.
    *

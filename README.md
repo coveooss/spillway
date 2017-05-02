@@ -45,7 +45,7 @@ The java documentation is available here: https://coveo.github.io/spillway/
 
 ###### Sample 2
 ```java
-    LimitUsageStorage storage = new InMemoryUsage();
+    LimitUsageStorage storage = new InMemoryStorage();
     SpillwayFactory spillwayFactory = new SpillwayFactory(storage);
 
     Limit<User> userLimit = LimitBuilder.of("perUser", User::getName).to(3).per(Duration.ofHours(1)).build();
@@ -63,7 +63,7 @@ The java documentation is available here: https://coveo.github.io/spillway/
 
 ###### Sample 3
 ```java
-    LimitUsageStorage storage = new InMemoryUsage();
+    LimitUsageStorage storage = new InMemoryStorage();
     SpillwayFactory spillwayFactory = new SpillwayFactory(storage);
     
     LimitOverride override = LimitOverrideBuilder.of("john").to(10).per(Duration.ofHours(1)).build();

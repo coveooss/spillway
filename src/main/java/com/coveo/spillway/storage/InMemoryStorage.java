@@ -53,25 +53,24 @@ import java.util.stream.Collectors;
 public class InMemoryStorage implements LimitUsageStorage {
 
   Map<Instant, Map<LimitKey, Capacity>> map = new ConcurrentHashMap<>();
-  private Object lock = new Object();
   private Clock clock = Clock.systemDefaultZone();
 
   @Override
-  public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
+  public synchronized Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Integer> updatedEntries = new LinkedHashMap<>();
-    synchronized (lock) {
-      for (AddAndGetRequest request : requests) {
-        Instant expirationDate = request.getBucket().plus(request.getExpiration());
 
-        LimitKey limitKey = LimitKey.fromRequest(request);
+    for (AddAndGetRequest request : requests) {
+      Instant expirationDate = request.getBucket().plus(request.getExpiration());
 
-        Map<LimitKey, Capacity> mapWithThisExpiration =
-            map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
-        Capacity counter = mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
-        updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
-      }
-      removeExpiredEntries();
+      LimitKey limitKey = LimitKey.fromRequest(request);
+
+      Map<LimitKey, Capacity> mapWithThisExpiration =
+          map.computeIfAbsent(expirationDate, (key) -> new HashMap<>());
+      Capacity counter = mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
+      updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
     }
+    removeExpiredEntries();
+
     return updatedEntries;
   }
 
@@ -85,17 +84,49 @@ public class InMemoryStorage implements LimitUsageStorage {
   }
 
   @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource) {
+    removeExpiredEntries();
+    return map.values()
+        .stream()
+        .flatMap(m -> m.entrySet().stream())
+        .filter(e -> resource.equals(e.getKey().getResource()))
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limit) {
+    removeExpiredEntries();
+    return map.values()
+        .stream()
+        .flatMap(m -> m.entrySet().stream())
+        .filter(e -> resource.equals(e.getKey().getResource()))
+        .filter(e -> limit.equals(e.getKey().getLimitName()))
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(
+      String resource, String limit, String property) {
+    removeExpiredEntries();
+    return map.values()
+        .stream()
+        .flatMap(m -> m.entrySet().stream())
+        .filter(e -> resource.equals(e.getKey().getResource()))
+        .filter(e -> limit.equals(e.getKey().getLimitName()))
+        .filter(e -> property.equals(e.getKey().getProperty()))
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+  }
+
+  @Override
   public void close() {}
 
-  public void overrideKeys(List<OverrideKeyRequest> overrides) {
-    synchronized (lock) {
-      for (OverrideKeyRequest override : overrides) {
-        Map<LimitKey, Capacity> mapWithThisExpiration =
-            map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>());
-        mapWithThisExpiration.put(override.getLimitKey(), new Capacity(override.getNewValue()));
-      }
-      removeExpiredEntries();
+  public synchronized void overrideKeys(List<OverrideKeyRequest> overrides) {
+    for (OverrideKeyRequest override : overrides) {
+      Map<LimitKey, Capacity> mapWithThisExpiration =
+          map.computeIfAbsent(override.getExpirationDate(), k -> new HashMap<>());
+      mapWithThisExpiration.put(override.getLimitKey(), new Capacity(override.getNewValue()));
     }
+    removeExpiredEntries();
   }
 
   public void applyOnEach(Consumer<Entry<Instant, Map<LimitKey, Capacity>>> action) {
