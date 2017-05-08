@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
 
@@ -83,7 +84,9 @@ public class RedisStorageTest {
 
   @Before
   public void flushDataInRedis() {
-    jedis.getResource().flushDB();
+    try(Jedis resource = jedis.getResource()){
+        resource.flushDB();
+    }
   }
 
   @Test
