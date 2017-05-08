@@ -26,10 +26,10 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.Capacity;
 import com.coveo.spillway.storage.utils.OverrideKeyRequest;
-import com.google.common.collect.Lists;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -125,13 +125,12 @@ public class InMemoryStorage implements LimitUsageStorage {
         e -> e.getKey().getProperty().equals(property));
   }
 
-  @SafeVarargs
-  private final Map<LimitKey, Integer> filterLimitCountersBy(
+  private Map<LimitKey, Integer> filterLimitCountersBy(
       Predicate<Map.Entry<LimitKey, Capacity>>... predicates) {
     return map.values()
         .stream()
         .flatMap(m -> m.entrySet().stream())
-        .filter(Lists.newArrayList(predicates).stream().reduce(Predicate::and).orElse(x -> true))
+        .filter(Arrays.stream(predicates).reduce(Predicate::and).orElse(x -> true))
         .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
   }
 
