@@ -31,6 +31,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,11 +128,12 @@ public class InMemoryStorage implements LimitUsageStorage {
 
   private Map<LimitKey, Integer> filterLimitCountersBy(
       Predicate<Map.Entry<LimitKey, Capacity>>... predicates) {
-    return map.values()
-        .stream()
-        .flatMap(m -> m.entrySet().stream())
-        .filter(Arrays.stream(predicates).reduce(Predicate::and).orElse(x -> true))
-        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+    return Collections.unmodifiableMap(
+        map.values()
+            .stream()
+            .flatMap(m -> m.entrySet().stream())
+            .filter(Arrays.stream(predicates).reduce(Predicate::and).orElse(x -> true))
+            .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get())));
   }
 
   private void removeExpiredEntries() {
