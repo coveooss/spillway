@@ -128,18 +128,18 @@ public interface LimitUsageStorage {
 
   /**
    * @param resource The resource for which you want to get the current limit counts
-   * @param limitKey The limit key for which you want to get the current limit counts
+   * @param limitName The limit name for which you want to get the current limit counts
    * @return A Map of a specific limit for a resource and its current count
    */
-  Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitKey);
+  Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName);
 
   /**
    * @param resource The resource for which you want to get the current limit counts
-   * @param limitKey The limit key for which you want to get the current limit counts
+   * @param limitName The limit name for which you want to get the current limit counts
    * @param property The property for which you want to get the current limit counts
-   * @return A Map of a specific limit for a resource and its current count
+   * @return A Map containing a specific limit for a resource and its current count
    */
-  Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitKey, String property);
+  Map<LimitKey, Integer> getCurrentLimitCount(String resource, String limitName, String property);
 
   /**
    * Call this method to close the storage when done with it.

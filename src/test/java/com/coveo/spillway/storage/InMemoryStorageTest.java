@@ -30,7 +30,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.InMemoryStorage;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -111,7 +110,7 @@ public class InMemoryStorageTest {
     storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 10);
     storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, -1);
 
-    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1, LIMIT1, PROPERTY1);
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCount(RESOURCE1, LIMIT1, PROPERTY1);
 
     assertThat(result).hasSize(1);
     assertThat(result.containsValue(15)).isTrue();

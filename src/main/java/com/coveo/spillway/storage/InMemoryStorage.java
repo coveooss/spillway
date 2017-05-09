@@ -109,20 +109,20 @@ public class InMemoryStorage implements LimitUsageStorage {
   }
 
   @Override
-  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limit) {
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName) {
     removeExpiredEntries();
     return filterLimitCountersBy(
         e -> e.getKey().getResource().equals(resource),
-        e -> e.getKey().getLimitName().equals(limit));
+        e -> e.getKey().getLimitName().equals(limitName));
   }
 
   @Override
-  public Map<LimitKey, Integer> getCurrentLimitCounters(
-      String resource, String limit, String property) {
+  public Map<LimitKey, Integer> getCurrentLimitCount(
+      String resource, String limitName, String property) {
     removeExpiredEntries();
     return filterLimitCountersBy(
         e -> e.getKey().getResource().equals(resource),
-        e -> e.getKey().getLimitName().equals(limit),
+        e -> e.getKey().getLimitName().equals(limitName),
         e -> e.getKey().getProperty().equals(property));
   }
 
