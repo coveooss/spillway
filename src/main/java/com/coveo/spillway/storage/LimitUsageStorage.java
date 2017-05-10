@@ -115,13 +115,13 @@ public interface LimitUsageStorage {
   Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests);
 
   /**
-   * @return A Map of all the enforced limits and their current count
+   * @return An UnmodifiableMap instance of all the enforced limits and their current count
    */
   Map<LimitKey, Integer> debugCurrentLimitCounters();
 
   /**
    * @param resource The resource for which you want to get the current limit counts
-   * @return A Map of all the enforced limits for a resource and their current count
+   * @return An UnmodifiableMap instance of all the enforced limits for a resource and their current count
    *
    */
   Map<LimitKey, Integer> getCurrentLimitCounters(String resource);
@@ -129,7 +129,7 @@ public interface LimitUsageStorage {
   /**
    * @param resource The resource for which you want to get the current limit counts
    * @param limitName The limit name for which you want to get the current limit counts
-   * @return A Map of a specific limit for a resource and its current count
+   * @return An UnmodifiableMap instance of all the enforced limits for a resource and limitName, as well as their current count
    */
   Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName);
 
@@ -137,9 +137,10 @@ public interface LimitUsageStorage {
    * @param resource The resource for which you want to get the current limit counts
    * @param limitName The limit name for which you want to get the current limit counts
    * @param property The property for which you want to get the current limit counts
-   * @return A Map containing a specific limit for a resource and its current count
+   * @return An UnmodifiableMap instance containing a specific limit and its current count
    */
-  Map<LimitKey, Integer> getCurrentLimitCount(String resource, String limitName, String property);
+  Map<LimitKey, Integer> getCurrentLimitCounters(
+      String resource, String limitName, String property);
 
   /**
    * Call this method to close the storage when done with it.

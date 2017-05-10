@@ -123,7 +123,7 @@ public class RedisStorage implements LimitUsageStorage {
   }
 
   @Override
-  public Map<LimitKey, Integer> getCurrentLimitCount(
+  public Map<LimitKey, Integer> getCurrentLimitCounters(
       String resource, String limitName, String property) {
     return getLimits(buildKeyPattern(keyPrefix, resource, limitName, property, WILD_CARD_OPERATOR));
   }
