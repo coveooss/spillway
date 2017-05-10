@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
 
@@ -49,8 +50,11 @@ import redis.embedded.RedisServer;
 public class RedisStorageTest {
 
   private static final String RESOURCE1 = "someResource";
+  private static final String RESOURCE2 = "someOtherResource";
   private static final String LIMIT1 = "someLimit";
+  private static final String LIMIT2 = "someOtherLimit";
   private static final String PROPERTY1 = "someProperty";
+  private static final String PROPERTY2 = "someOtherProperty";
   private static final Duration EXPIRATION = Duration.ofHours(1);
   private static final Instant TIMESTAMP = Instant.now();
 
@@ -80,7 +84,9 @@ public class RedisStorageTest {
 
   @Before
   public void flushDataInRedis() {
-    jedis.getResource().flushDB();
+    try (Jedis resource = jedis.getResource()) {
+      resource.flushDB();
+    }
   }
 
   @Test
@@ -134,6 +140,46 @@ public class RedisStorageTest {
       assertThat(limitCounter.getKey().getBucket()).isLessThan(Instant.now());
       assertThat(limitCounter.getValue()).isEqualTo(1);
     }
+  }
+
+  @Test
+  public void canGetLimitsPerResource() {
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5);
+    storage.addAndGet(RESOURCE1, LIMIT2, PROPERTY1, true, EXPIRATION, TIMESTAMP, 10);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, 15);
+    storage.addAndGet(RESOURCE2, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, -1);
+
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1);
+
+    assertThat(result).hasSize(3);
+    assertThat(result.containsValue(5));
+    assertThat(result.containsValue(10));
+    assertThat(result.containsValue(15));
+  }
+
+  @Test
+  public void canGetLimitsPerResourceAndKey() {
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, 10);
+    storage.addAndGet(RESOURCE1, LIMIT2, PROPERTY1, true, EXPIRATION, TIMESTAMP, -1);
+
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1, LIMIT1);
+
+    assertThat(result).hasSize(2);
+    assertThat(result.containsValue(5)).isTrue();
+    assertThat(result.containsValue(10)).isTrue();
+  }
+
+  @Test
+  public void canGetLimitsPerResourceKeyAndProperty() {
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 10);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, -1);
+
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1, LIMIT1, PROPERTY1);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.containsValue(15)).isTrue();
   }
 
   @Test

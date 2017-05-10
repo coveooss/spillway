@@ -29,7 +29,9 @@ import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -97,6 +100,40 @@ public class InMemoryStorage implements LimitUsageStorage {
   public void applyOnEach(Consumer<Entry<Instant, Map<LimitKey, Capacity>>> action) {
     map.entrySet().forEach(action);
     removeExpiredEntries();
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource) {
+    removeExpiredEntries();
+    return filterLimitCountersBy(e -> e.getKey().getResource().equals(resource));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName) {
+    removeExpiredEntries();
+    return filterLimitCountersBy(
+        e -> e.getKey().getResource().equals(resource),
+        e -> e.getKey().getLimitName().equals(limitName));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(
+      String resource, String limitName, String property) {
+    removeExpiredEntries();
+    return filterLimitCountersBy(
+        e -> e.getKey().getResource().equals(resource),
+        e -> e.getKey().getLimitName().equals(limitName),
+        e -> e.getKey().getProperty().equals(property));
+  }
+
+  private Map<LimitKey, Integer> filterLimitCountersBy(
+      Predicate<Map.Entry<LimitKey, Capacity>>... predicates) {
+    return Collections.unmodifiableMap(
+        map.values()
+            .stream()
+            .flatMap(m -> m.entrySet().stream())
+            .filter(Arrays.stream(predicates).reduce(Predicate::and).orElse(x -> true))
+            .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get())));
   }
 
   private void removeExpiredEntries() {

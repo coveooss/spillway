@@ -80,6 +80,22 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
     return wrappedLimitUsageStorage.debugCurrentLimitCounters();
   }
 
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource) {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters(resource);
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName) {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters(resource, limitName);
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(
+      String resource, String limitName, String property) {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters(resource, limitName, property);
+  }
+
   public void shutdownStorage() {
     executorService.shutdown();
   }

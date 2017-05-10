@@ -91,6 +91,22 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   }
 
   @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource) {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters(resource);
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName) {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters(resource, limitName);
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(
+      String resource, String limitName, String property) {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters(resource, limitName, property);
+  }
+
+  @Override
   public void close() throws Exception {
     wrappedLimitUsageStorage.close();
   }

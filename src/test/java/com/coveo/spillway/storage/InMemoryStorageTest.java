@@ -29,11 +29,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.coveo.spillway.storage.InMemoryStorage;
+import com.coveo.spillway.limit.LimitKey;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.*;
@@ -42,8 +43,11 @@ import static org.mockito.Mockito.*;
 public class InMemoryStorageTest {
 
   private static final String RESOURCE1 = "someResource";
+  private static final String RESOURCE2 = "someOtherResource";
   private static final String LIMIT1 = "someLimit";
+  private static final String LIMIT2 = "someOtherLimit";
   private static final String PROPERTY1 = "someProperty";
+  private static final String PROPERTY2 = "someOtherProperty";
   private static final Duration EXPIRATION = Duration.ofHours(1);
   private static final Instant TIMESTAMP = Instant.now();
 
@@ -70,6 +74,46 @@ public class InMemoryStorageTest {
         storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
+  }
+
+  @Test
+  public void canGetLimitsPerResource() {
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5);
+    storage.addAndGet(RESOURCE1, LIMIT2, PROPERTY1, true, EXPIRATION, TIMESTAMP, 10);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, 15);
+    storage.addAndGet(RESOURCE2, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, -1);
+
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1);
+
+    assertThat(result).hasSize(3);
+    assertThat(result.containsValue(5));
+    assertThat(result.containsValue(10));
+    assertThat(result.containsValue(15));
+  }
+
+  @Test
+  public void canGetLimitsPerResourceAndKey() {
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, 10);
+    storage.addAndGet(RESOURCE1, LIMIT2, PROPERTY1, true, EXPIRATION, TIMESTAMP, -1);
+
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1, LIMIT1);
+
+    assertThat(result).hasSize(2);
+    assertThat(result.containsValue(5)).isTrue();
+    assertThat(result.containsValue(10)).isTrue();
+  }
+
+  @Test
+  public void canGetLimitsPerResourceKeyAndProperty() {
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 10);
+    storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY2, true, EXPIRATION, TIMESTAMP, -1);
+
+    Map<LimitKey, Integer> result = storage.getCurrentLimitCounters(RESOURCE1, LIMIT1, PROPERTY1);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.containsValue(15)).isTrue();
   }
 
   @Test

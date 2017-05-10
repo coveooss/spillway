@@ -48,13 +48,12 @@ public abstract class AbstractLimitTrigger implements LimitTrigger {
   }
 
   /**
-   * This method is called by {@link #callbackIfRequired(Object, int, int, LimitDefinition)} to
+   * This method is called by {@link #callbackIfRequired(Object, int, Instant, int, LimitDefinition)} to
    * verify if the call-back you should be called.
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor
    *                ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
-   * @param cost The cost of the current query
    * @param currentLimitValue The current limit associated counter (including the current query cost)
    * @param limitDefinition The properties of the current limit
    * @return True if the limit is triggered, false otherwise

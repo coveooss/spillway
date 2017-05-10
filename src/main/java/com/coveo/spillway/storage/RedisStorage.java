@@ -23,7 +23,9 @@
 package com.coveo.spillway.storage;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,7 +59,9 @@ import redis.clients.jedis.Response;
 public class RedisStorage implements LimitUsageStorage {
 
   private static final String KEY_SEPARATOR = "|";
+  private static final String KEY_SEPARATOR_SUBSTITUTE = "_";
   private static final String DEFAULT_PREFIX = "spillway";
+  private static final String WILD_CARD_OPERATOR = "*";
 
   private final JedisPool jedisPool;
   private final String keyPrefix;
@@ -105,10 +109,30 @@ public class RedisStorage implements LimitUsageStorage {
 
   @Override
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
+    return getLimits(buildKeyPattern(keyPrefix, WILD_CARD_OPERATOR));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource) {
+    return getLimits(buildKeyPattern(keyPrefix, resource, WILD_CARD_OPERATOR));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(String resource, String limitName) {
+    return getLimits(buildKeyPattern(keyPrefix, resource, limitName, WILD_CARD_OPERATOR));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters(
+      String resource, String limitName, String property) {
+    return getLimits(buildKeyPattern(keyPrefix, resource, limitName, property, WILD_CARD_OPERATOR));
+  }
+
+  private Map<LimitKey, Integer> getLimits(String keyPattern) {
     Map<LimitKey, Integer> counters = new HashMap<>();
 
     try (Jedis jedis = jedisPool.getResource()) {
-      Set<String> keys = jedis.keys(keyPrefix + KEY_SEPARATOR + "*");
+      Set<String> keys = jedis.keys(keyPattern);
       for (String key : keys) {
         int value = Integer.parseInt(jedis.get(key));
 
@@ -124,8 +148,7 @@ public class RedisStorage implements LimitUsageStorage {
             value);
       }
     }
-
-    return counters;
+    return Collections.unmodifiableMap(counters);
   }
 
   @Override
@@ -133,8 +156,15 @@ public class RedisStorage implements LimitUsageStorage {
     jedisPool.destroy();
   }
 
+  private String buildKeyPattern(String... keyComponents) {
+    return Arrays.asList(keyComponents)
+        .stream()
+        .map(RedisStorage::clean)
+        .collect(Collectors.joining(KEY_SEPARATOR));
+  }
+
   private static final String clean(String keyComponent) {
-    return keyComponent.replace(KEY_SEPARATOR, "_");
+    return keyComponent.replace(KEY_SEPARATOR, KEY_SEPARATOR_SUBSTITUTE);
   }
 
   public static final Builder builder() {
