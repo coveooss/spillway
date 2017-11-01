@@ -99,14 +99,13 @@ public class InMemoryStorage implements LimitUsageStorage {
     removeExpiredEntries();
   }
 
-  public Map<LimitKey, Integer> getCurrentLimitCounters()
-  {
+  public Map<LimitKey, Integer> getCurrentLimitCounters() {
     return map.values()
-              .stream()
-              .flatMap(m -> m.entrySet().stream())
-              .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
+        .stream()
+        .flatMap(m -> m.entrySet().stream())
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
   }
-  
+
   @Override
   public Map<LimitKey, Integer> getCurrentLimitCounters(String resource) {
     removeExpiredEntries();
