@@ -121,6 +121,7 @@ public class AddAndGetRequest {
       this.resource = other.resource;
       this.limitName = other.limitName;
       this.property = other.property;
+      this.distributed = other.distributed;
       this.expiration = other.expiration;
       this.eventTimestamp = other.eventTimestamp;
       this.cost = other.cost;

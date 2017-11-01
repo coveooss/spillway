@@ -24,8 +24,11 @@ package com.coveo.spillway.storage;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
+import java.util.stream.Collectors;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
@@ -55,29 +58,41 @@ import com.coveo.spillway.storage.utils.CacheSynchronization;
 public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   private final LimitUsageStorage wrappedLimitUsageStorage;
   private InMemoryStorage cache;
+  private CacheSynchronization cacheSynchronization;
   private Timer timer;
 
-  public AsyncBatchLimitUsageStorage(
-      LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronisations) {
-    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, Duration.ofMillis(0));
+  public AsyncBatchLimitUsageStorage(LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronizations) {
+    this(wrappedLimitUsageStorage, new InMemoryStorage(), timeBetweenSynchronizations, Duration.ofMillis(0));
   }
 
-  /*package*/ AsyncBatchLimitUsageStorage(
-      LimitUsageStorage wrappedLimitUsageStorage,
-      Duration timeBetweenSynchronisations,
-      Duration delayBeforeFirstSync) {
+  /*package*/ AsyncBatchLimitUsageStorage(LimitUsageStorage wrappedLimitUsageStorage,
+                                          InMemoryStorage cache,
+                                          Duration timeBetweenSynchronisations,
+                                          Duration delayBeforeFirstSync) {
+    this(wrappedLimitUsageStorage,
+         cache,
+         new CacheSynchronization(cache, wrappedLimitUsageStorage),
+         timeBetweenSynchronisations,
+         delayBeforeFirstSync);
+  }
+
+  /*package*/ AsyncBatchLimitUsageStorage(LimitUsageStorage wrappedLimitUsageStorage,
+                                          InMemoryStorage cache,
+                                          CacheSynchronization cacheSynchronization,
+                                          Duration timeBetweenSynchronisations,
+                                          Duration delayBeforeFirstSync) {
     this.wrappedLimitUsageStorage = wrappedLimitUsageStorage;
-    this.cache = new InMemoryStorage();
+    this.cache = cache;
+    this.cacheSynchronization = cacheSynchronization;
 
     timer = new Timer();
-    timer.schedule(
-        new CacheSynchronization(cache, wrappedLimitUsageStorage),
-        delayBeforeFirstSync.toMillis(),
-        timeBetweenSynchronisations.toMillis());
+    timer.schedule(cacheSynchronization, delayBeforeFirstSync.toMillis(), timeBetweenSynchronisations.toMillis());
   }
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
+    initMissingLimitsFromInMemoryCache(requests);
+
     return cache.addAndGet(requests);
   }
 
@@ -109,5 +124,25 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   @Override
   public void close() throws Exception {
     wrappedLimitUsageStorage.close();
+  }
+
+  /**
+  * When a request is made, we want to make sure the cache has the latest value from storage before enforcing.
+  * To do so, we issue a zero-cost request for limits that are not cached already and we trigger a sync to retrieve
+  * the actual value from the storage to the cache. 
+  */
+  private void initMissingLimitsFromInMemoryCache(Collection<AddAndGetRequest> requests) {
+    Set<LimitKey> currentLimitCountersKeys = cache.getCurrentLimitCounters().keySet();
+    List<AddAndGetRequest> missingLimitsRequests = requests.stream()
+                                                           .filter(request -> !currentLimitCountersKeys.contains(LimitKey.fromRequest(request)))
+                                                           .collect(Collectors.toList());
+    if (missingLimitsRequests.size() > 0) {
+        cache.addAndGet(missingLimitsRequests.stream()
+                                             .map(request -> new AddAndGetRequest.Builder(request).withCost(0)
+                                                                                                  .build())
+                                             .collect(Collectors.toList()));
+        
+        cacheSynchronization.run();
+    }
   }
 }

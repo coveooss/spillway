@@ -56,6 +56,8 @@ public class CacheSynchronization extends TimerTask {
 
   @Override
   public void run() {
+    logger.info("Synchronizing spillway storage cache.");
+
     cache.applyOnEach(
         instantEntry -> {
           try {
