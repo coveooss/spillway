@@ -117,7 +117,17 @@ public interface LimitUsageStorage {
   /**
    * @return An UnmodifiableMap instance of all the enforced limits and their current count
    */
+  @Deprecated
   Map<LimitKey, Integer> debugCurrentLimitCounters();
+
+  /**
+   * Returns all enforced limits with their current count
+   *
+   * <p><b>Use with caution, this could be a costly operation</b></p>
+   *
+   * @return An UnmodifiableMap instance of all the enforced limits and their current count
+   */
+  Map<LimitKey, Integer> getCurrentLimitCounters();
 
   /**
    * @param resource The resource for which you want to get the current limit counts

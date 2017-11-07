@@ -22,6 +22,7 @@
  */
 package com.coveo.spillway.storage;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,6 +72,7 @@ public class RedisStorage implements LimitUsageStorage {
     this.keyPrefix = builder.keyPrefix;
   }
 
+  @SuppressWarnings("resource")
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Response<Long>> responses = new LinkedHashMap<>();
@@ -87,7 +89,8 @@ public class RedisStorage implements LimitUsageStorage {
                     limitKey.getResource(),
                     limitKey.getLimitName(),
                     limitKey.getProperty(),
-                    limitKey.getBucket().toString())
+                    limitKey.getBucket().toString(),
+                    limitKey.getExpiration().toString())
                 .map(RedisStorage::clean)
                 .collect(Collectors.joining(KEY_SEPARATOR));
 
@@ -109,6 +112,11 @@ public class RedisStorage implements LimitUsageStorage {
 
   @Override
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
+    return getCurrentLimitCounters();
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters() {
     return getLimits(buildKeyPattern(keyPrefix, WILD_CARD_OPERATOR));
   }
 
@@ -144,7 +152,8 @@ public class RedisStorage implements LimitUsageStorage {
                 keyComponents[2],
                 keyComponents[3],
                 true,
-                Instant.parse(keyComponents[4])),
+                Instant.parse(keyComponents[4]),
+                Duration.parse(keyComponents[5])),
             value);
       }
     }
