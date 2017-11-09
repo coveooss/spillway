@@ -22,6 +22,7 @@
  */
 package com.coveo.spillway.storage;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
@@ -55,9 +58,11 @@ import redis.clients.jedis.Response;
  *
  * @author Guillaume Simard
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class RedisStorage implements LimitUsageStorage {
+  private static final Logger logger = LoggerFactory.getLogger(RedisStorage.class);
 
   private static final String KEY_SEPARATOR = "|";
   private static final String KEY_SEPARATOR_SUBSTITUTE = "_";
@@ -72,47 +77,44 @@ public class RedisStorage implements LimitUsageStorage {
     this.keyPrefix = builder.keyPrefix;
   }
 
-  @SuppressWarnings("resource")
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Response<Long>> responses = new LinkedHashMap<>();
 
     try (Jedis jedis = jedisPool.getResource()) {
-      Pipeline pipeline = jedis.pipelined();
+      try (Pipeline pipeline = jedis.pipelined()) {
 
-      for (AddAndGetRequest request : requests) {
-        pipeline.multi();
-        LimitKey limitKey = LimitKey.fromRequest(request);
-        String redisKey =
-            Stream.of(
-                    keyPrefix,
-                    limitKey.getResource(),
-                    limitKey.getLimitName(),
-                    limitKey.getProperty(),
-                    limitKey.getBucket().toString(),
-                    limitKey.getExpiration().toString())
-                .map(RedisStorage::clean)
-                .collect(Collectors.joining(KEY_SEPARATOR));
+        for (AddAndGetRequest request : requests) {
+          pipeline.multi();
+          LimitKey limitKey = LimitKey.fromRequest(request);
+          String redisKey =
+              Stream.of(
+                      keyPrefix,
+                      limitKey.getResource(),
+                      limitKey.getLimitName(),
+                      limitKey.getProperty(),
+                      limitKey.getBucket().toString(),
+                      limitKey.getExpiration().toString())
+                  .map(RedisStorage::clean)
+                  .collect(Collectors.joining(KEY_SEPARATOR));
 
-        responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
-        // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-        // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-        pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
-        pipeline.exec();
+          responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
+          // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
+          // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
+          pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
+          pipeline.exec();
+        }
+
+        pipeline.sync();
+      } catch (IOException e) {
+        logger.error("Unable to close redis storage pipeline.", e);
       }
-
-      pipeline.sync();
     }
 
     return responses
         .entrySet()
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get().intValue()));
-  }
-
-  @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return getCurrentLimitCounters();
   }
 
   @Override

@@ -36,6 +36,7 @@ import com.coveo.spillway.limit.utils.LimitUtils;
  * @see Builder
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class AddAndGetRequest {

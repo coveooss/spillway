@@ -204,6 +204,6 @@ public class Spillway<T> {
    * @return Every limit and its current associated counter.
    */
   public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return storage.debugCurrentLimitCounters();
+    return storage.getCurrentLimitCounters();
   }
 }

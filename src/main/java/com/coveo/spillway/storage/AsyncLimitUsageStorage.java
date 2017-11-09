@@ -49,6 +49,7 @@ import com.coveo.spillway.storage.utils.OverrideKeyRequest;
  * the queries are not slowed down by any external problems.
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class AsyncLimitUsageStorage implements LimitUsageStorage {
@@ -71,11 +72,6 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
     executorService.submit(() -> sendAndCacheRequests(requests));
 
     return cachedEntries;
-  }
-
-  @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return wrappedLimitUsageStorage.getCurrentLimitCounters();
   }
 
   @Override

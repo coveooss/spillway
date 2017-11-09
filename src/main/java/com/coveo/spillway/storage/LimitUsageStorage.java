@@ -37,6 +37,7 @@ import java.util.Map;
  * Interface that defines a distributed storage that could be used with Spillway.
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public interface LimitUsageStorage {
@@ -113,12 +114,6 @@ public interface LimitUsageStorage {
    * @return A Map of the limits and their current count
    */
   Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests);
-
-  /**
-   * @return An UnmodifiableMap instance of all the enforced limits and their current count
-   */
-  @Deprecated
-  Map<LimitKey, Integer> debugCurrentLimitCounters();
 
   /**
    * Returns all enforced limits with their current count

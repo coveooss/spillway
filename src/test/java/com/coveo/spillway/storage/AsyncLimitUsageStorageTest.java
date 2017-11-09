@@ -84,7 +84,7 @@ public class AsyncLimitUsageStorageTest {
     int counter = asyncStorage.addAndGet(request).getValue();
 
     assertThat(counter).isEqualTo(1);
-    assertThat(asyncStorage.debugCurrentLimitCounters()).hasSize(0);
+    assertThat(asyncStorage.getCurrentLimitCounters()).hasSize(0);
     Thread.sleep(MOCKED_STORAGE_SLEEP * 2);
     // After a while, the mockedStorage returns and the counter is overwritten.
     counter = asyncStorage.addAndGet(request).getValue();

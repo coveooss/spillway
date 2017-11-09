@@ -120,12 +120,12 @@ public class InMemoryStorageTest {
   public void expiredEntriesAreRemovedFromDebugInfo() {
     storage.incrementAndGet(
         RESOURCE1, LIMIT1, PROPERTY1, true, Duration.ofSeconds(2), Instant.now());
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
+    assertThat(storage.getCurrentLimitCounters()).hasSize(1);
+    assertThat(storage.getCurrentLimitCounters()).hasSize(1);
 
     // Fake sleep two seconds to ensure that we bump to another bucket
     when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
 
-    assertThat(storage.debugCurrentLimitCounters()).isEmpty();
+    assertThat(storage.getCurrentLimitCounters()).isEmpty();
   }
 }

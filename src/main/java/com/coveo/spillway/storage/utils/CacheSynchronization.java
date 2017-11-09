@@ -40,6 +40,7 @@ import com.coveo.spillway.storage.LimitUsageStorage;
  * by the {@link AsyncBatchLimitUsageStorage}.
  *
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class CacheSynchronization extends TimerTask {
@@ -59,10 +60,7 @@ public class CacheSynchronization extends TimerTask {
             .getCurrentLimitCounters()
             .entrySet()
             .stream()
-            .map(
-                entry -> {
-                  return new OverrideKeyRequest(entry.getKey(), entry.getValue());
-                })
+            .map(entry -> new OverrideKeyRequest(entry.getKey(), entry.getValue()))
             .collect(Collectors.toList()));
   }
 

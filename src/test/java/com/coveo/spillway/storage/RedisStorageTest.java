@@ -130,7 +130,7 @@ public class RedisStorageTest {
     for (int i = 0; i < 10; i++) {
       storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1 + i, true, EXPIRATION, TIMESTAMP);
     }
-    Map<LimitKey, Integer> limitCounters = storage.debugCurrentLimitCounters();
+    Map<LimitKey, Integer> limitCounters = storage.getCurrentLimitCounters();
     assertThat(limitCounters).hasSize(10);
     for (Map.Entry<LimitKey, Integer> limitCounter : limitCounters.entrySet()) {
       assertThat(limitCounter.getKey().getResource()).isEqualTo(RESOURCE1);

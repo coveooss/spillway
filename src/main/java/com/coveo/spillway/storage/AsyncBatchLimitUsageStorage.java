@@ -50,6 +50,7 @@ import com.coveo.spillway.storage.utils.CacheSynchronization;
  * big differences between the throttling instances.
  *
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
@@ -120,13 +121,8 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
     return cache.addAndGet(requests);
   }
 
-  @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return wrappedLimitUsageStorage.getCurrentLimitCounters();
-  }
-
   public Map<LimitKey, Integer> debugCacheLimitCounters() {
-    return cache.debugCurrentLimitCounters();
+    return cache.getCurrentLimitCounters();
   }
 
   @Override
@@ -152,8 +148,8 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
 
   @Override
   public void close() throws Exception {
-    cache.close();
-    wrappedLimitUsageStorage.close();
     timer.cancel();
+    wrappedLimitUsageStorage.close();
+    cache.close();
   }
 }

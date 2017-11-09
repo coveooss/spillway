@@ -34,6 +34,7 @@ import com.coveo.spillway.storage.InMemoryStorage;
  * the distributed repository.
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class OverrideKeyRequest {

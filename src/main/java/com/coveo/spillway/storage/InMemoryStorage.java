@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
  *
  * @author Guillaume Simard
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class InMemoryStorage implements LimitUsageStorage {
@@ -70,11 +71,6 @@ public class InMemoryStorage implements LimitUsageStorage {
     removeExpiredEntries();
 
     return updatedEntries;
-  }
-
-  @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return getCurrentLimitCounters();
   }
 
   @Override
