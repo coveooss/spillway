@@ -220,7 +220,7 @@ public class SpillwayTest {
 
     assertThat(spillway.tryCall(john)).isFalse();
 
-    Map<LimitKey, Integer> counters = inMemoryStorage.debugCurrentLimitCounters();
+    Map<LimitKey, Integer> counters = inMemoryStorage.getCurrentLimitCounters();
 
     assertThat(counters.values()).containsExactly(0);
   }

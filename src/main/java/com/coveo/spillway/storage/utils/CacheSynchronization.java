@@ -22,10 +22,9 @@
  */
 package com.coveo.spillway.storage.utils;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Map.Entry;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -41,6 +40,7 @@ import com.coveo.spillway.storage.LimitUsageStorage;
  * by the {@link AsyncBatchLimitUsageStorage}.
  *
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class CacheSynchronization extends TimerTask {
@@ -54,39 +54,41 @@ public class CacheSynchronization extends TimerTask {
     this.storage = storage;
   }
 
+  public void init() {
+    cache.overrideKeys(
+        storage
+            .getCurrentLimitCounters()
+            .entrySet()
+            .stream()
+            .map(entry -> new OverrideKeyRequest(entry.getKey(), entry.getValue()))
+            .collect(Collectors.toList()));
+  }
+
   @Override
   public void run() {
     cache.applyOnEach(
         instantEntry -> {
           try {
-            Instant expiration = instantEntry.getKey();
-
-            instantEntry
-                .getValue()
-                .entrySet()
-                .stream()
-                .filter(valueEntry -> valueEntry.getKey().isDistributed())
-                .forEach(valueEntry -> applyOnEachEntry(valueEntry, expiration));
+            if (instantEntry.getKey().isDistributed()) {
+              applyOnEachEntry(instantEntry);
+            }
           } catch (Exception e) {
             logger.warn("Exception during synchronization, ignoring.", e);
           }
         });
   }
 
-  private void applyOnEachEntry(Entry<LimitKey, Capacity> entry, Instant expiration) {
+  private void applyOnEachEntry(Entry<LimitKey, Capacity> entry) {
     LimitKey limitKey = entry.getKey();
 
     int cost = entry.getValue().getDelta();
-
-    Duration duration =
-        Duration.ofMillis(expiration.toEpochMilli() - limitKey.getBucket().toEpochMilli());
 
     AddAndGetRequest request =
         new AddAndGetRequest.Builder()
             .withResource(limitKey.getResource())
             .withLimitName(limitKey.getLimitName())
             .withProperty(limitKey.getProperty())
-            .withExpiration(duration)
+            .withExpiration(limitKey.getExpiration())
             .withEventTimestamp(limitKey.getBucket())
             .withCost(cost)
             .build();

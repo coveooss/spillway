@@ -34,26 +34,20 @@ import com.coveo.spillway.storage.InMemoryStorage;
  * the distributed repository.
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class OverrideKeyRequest {
   private LimitKey limitKey;
+  private int newValue;
 
-  public OverrideKeyRequest(LimitKey limitKey, Instant expirationDate, int newValue) {
+  public OverrideKeyRequest(LimitKey limitKey, int newValue) {
     this.limitKey = limitKey;
-    this.expirationDate = expirationDate;
     this.newValue = newValue;
   }
 
-  private Instant expirationDate;
-  private int newValue;
-
   public LimitKey getLimitKey() {
     return limitKey;
-  }
-
-  public Instant getExpirationDate() {
-    return expirationDate;
   }
 
   public int getNewValue() {

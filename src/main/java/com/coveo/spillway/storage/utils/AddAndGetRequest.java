@@ -36,6 +36,7 @@ import com.coveo.spillway.limit.utils.LimitUtils;
  * @see Builder
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class AddAndGetRequest {
@@ -121,6 +122,7 @@ public class AddAndGetRequest {
       this.resource = other.resource;
       this.limitName = other.limitName;
       this.property = other.property;
+      this.distributed = other.distributed;
       this.expiration = other.expiration;
       this.eventTimestamp = other.eventTimestamp;
       this.cost = other.cost;

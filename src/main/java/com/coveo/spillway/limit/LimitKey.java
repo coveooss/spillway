@@ -22,6 +22,7 @@
  */
 package com.coveo.spillway.limit;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
@@ -31,6 +32,7 @@ import com.coveo.spillway.storage.utils.AddAndGetRequest;
  * used as a key in Maps and Pairs returned by storages.
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class LimitKey {
@@ -39,14 +41,21 @@ public class LimitKey {
   private String property;
   private boolean distributed;
   private Instant bucket;
+  private Duration expiration;
 
   public LimitKey(
-      String resource, String limitName, String property, boolean distributed, Instant bucket) {
+      String resource,
+      String limitName,
+      String property,
+      boolean distributed,
+      Instant bucket,
+      Duration expiration) {
     this.resource = resource;
     this.limitName = limitName;
     this.property = property;
-    this.bucket = bucket;
     this.distributed = distributed;
+    this.bucket = bucket;
+    this.expiration = expiration;
   }
 
   public String getResource() {
@@ -57,12 +66,28 @@ public class LimitKey {
     this.resource = resource;
   }
 
+  public String getLimitName() {
+    return limitName;
+  }
+
+  public void setLimitName(String limitName) {
+    this.limitName = limitName;
+  }
+
   public String getProperty() {
     return property;
   }
 
   public void setProperty(String property) {
     this.property = property;
+  }
+
+  public boolean isDistributed() {
+    return distributed;
+  }
+
+  public void setDistributed(boolean distributed) {
+    this.distributed = distributed;
   }
 
   public Instant getBucket() {
@@ -73,20 +98,12 @@ public class LimitKey {
     this.bucket = bucket;
   }
 
-  public String getLimitName() {
-    return limitName;
+  public Duration getExpiration() {
+    return expiration;
   }
 
-  public void setLimitName(String limitName) {
-    this.limitName = limitName;
-  }
-
-  public boolean isDistributed() {
-    return distributed;
-  }
-
-  public void setDistributed(boolean distributed) {
-    this.distributed = distributed;
+  public void setExpiration(Duration expiration) {
+    this.expiration = expiration;
   }
 
   @Override
@@ -128,6 +145,9 @@ public class LimitKey {
         + '\''
         + ", bucket="
         + bucket
+        + '\''
+        + ", expiration="
+        + expiration
         + '}';
   }
 
@@ -137,6 +157,7 @@ public class LimitKey {
         request.getLimitName(),
         request.getProperty(),
         request.isDistributed(),
-        request.getBucket());
+        request.getBucket(),
+        request.getExpiration());
   }
 }

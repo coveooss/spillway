@@ -50,6 +50,7 @@ import com.coveo.spillway.storage.utils.CacheSynchronization;
  * big differences between the throttling instances.
  *
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
@@ -58,20 +59,59 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
   private Timer timer;
 
   public AsyncBatchLimitUsageStorage(
-      LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronisations) {
-    this(wrappedLimitUsageStorage, timeBetweenSynchronisations, Duration.ofMillis(0));
+      LimitUsageStorage wrappedLimitUsageStorage, Duration timeBetweenSynchronizations) {
+    this(
+        wrappedLimitUsageStorage,
+        new InMemoryStorage(),
+        timeBetweenSynchronizations,
+        Duration.ofMillis(0),
+        false);
+  }
+
+  public AsyncBatchLimitUsageStorage(
+      LimitUsageStorage wrappedLimitUsageStorage,
+      Duration timeBetweenSynchronizations,
+      boolean forceCacheInit) {
+    this(
+        wrappedLimitUsageStorage,
+        new InMemoryStorage(),
+        timeBetweenSynchronizations,
+        Duration.ofMillis(0),
+        forceCacheInit);
   }
 
   /*package*/ AsyncBatchLimitUsageStorage(
       LimitUsageStorage wrappedLimitUsageStorage,
+      InMemoryStorage cache,
       Duration timeBetweenSynchronisations,
-      Duration delayBeforeFirstSync) {
+      Duration delayBeforeFirstSync,
+      boolean forceCacheInit) {
+    this(
+        wrappedLimitUsageStorage,
+        cache,
+        new CacheSynchronization(cache, wrappedLimitUsageStorage),
+        timeBetweenSynchronisations,
+        delayBeforeFirstSync,
+        forceCacheInit);
+  }
+
+  /*package*/ AsyncBatchLimitUsageStorage(
+      LimitUsageStorage wrappedLimitUsageStorage,
+      InMemoryStorage cache,
+      CacheSynchronization cacheSynchronization,
+      Duration timeBetweenSynchronisations,
+      Duration delayBeforeFirstSync,
+      boolean forceCacheInit) {
     this.wrappedLimitUsageStorage = wrappedLimitUsageStorage;
-    this.cache = new InMemoryStorage();
+    this.cache = cache;
+
+    if (forceCacheInit) {
+      cacheSynchronization.init();
+    }
 
     timer = new Timer();
     timer.schedule(
-        new CacheSynchronization(cache, wrappedLimitUsageStorage),
+        cacheSynchronization,
         delayBeforeFirstSync.toMillis(),
         timeBetweenSynchronisations.toMillis());
   }
@@ -81,13 +121,13 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
     return cache.addAndGet(requests);
   }
 
-  @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return wrappedLimitUsageStorage.debugCurrentLimitCounters();
+  public Map<LimitKey, Integer> debugCacheLimitCounters() {
+    return cache.getCurrentLimitCounters();
   }
 
-  public Map<LimitKey, Integer> debugCacheLimitCounters() {
-    return cache.debugCurrentLimitCounters();
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters() {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters();
   }
 
   @Override
@@ -108,6 +148,8 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
 
   @Override
   public void close() throws Exception {
+    timer.cancel();
     wrappedLimitUsageStorage.close();
+    cache.close();
   }
 }

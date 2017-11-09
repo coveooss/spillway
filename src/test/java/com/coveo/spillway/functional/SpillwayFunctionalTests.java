@@ -57,6 +57,7 @@ public class SpillwayFunctionalTests {
   private static JedisPool jedis;
   private static RedisStorage storage;
 
+  @SuppressWarnings("resource")
   @BeforeClass
   public static void startRedis() throws IOException {
     try {
@@ -114,11 +115,11 @@ public class SpillwayFunctionalTests {
             .getValue();
 
     assertThat(result1).isEqualTo(1);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
+    assertThat(storage.getCurrentLimitCounters()).hasSize(1);
     Thread.sleep(1000);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(1);
+    assertThat(storage.getCurrentLimitCounters()).hasSize(1);
     Thread.sleep(2000);
-    assertThat(storage.debugCurrentLimitCounters()).hasSize(0);
+    assertThat(storage.getCurrentLimitCounters()).hasSize(0);
   }
 
   @Test
@@ -179,7 +180,7 @@ public class SpillwayFunctionalTests {
       asyncStorage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     }
 
-    Map<LimitKey, Integer> currentCounters = asyncStorage.debugCurrentLimitCounters();
+    Map<LimitKey, Integer> currentCounters = asyncStorage.getCurrentLimitCounters();
     Map<LimitKey, Integer> cacheCounters = asyncStorage.debugCacheLimitCounters();
 
     currentCounters

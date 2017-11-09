@@ -22,16 +22,7 @@
  */
 package com.coveo.spillway.storage;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.utils.AddAndGetRequest;
-import com.coveo.spillway.storage.utils.OverrideKeyRequest;
-
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +31,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
+import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
 /**
  * An asynchronous implementation of {@link LimitUsageStorage}.
@@ -51,6 +49,7 @@ import java.util.stream.Collectors;
  * the queries are not slowed down by any external problems.
  *
  * @author Guillaume Simard
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class AsyncLimitUsageStorage implements LimitUsageStorage {
@@ -76,8 +75,8 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
   }
 
   @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    return wrappedLimitUsageStorage.debugCurrentLimitCounters();
+  public Map<LimitKey, Integer> getCurrentLimitCounters() {
+    return wrappedLimitUsageStorage.getCurrentLimitCounters();
   }
 
   @Override
@@ -115,22 +114,17 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
       Map<LimitKey, Integer> responses = wrappedLimitUsageStorage.addAndGet(requests);
 
       // Flatten all requests into a single list of overrides.
-      Map<Pair<LimitKey, Instant>, Integer> rawOverrides = new HashMap<>();
+      Map<LimitKey, Integer> rawOverrides = new HashMap<>();
       for (AddAndGetRequest request : requests) {
         LimitKey limitEntry = LimitKey.fromRequest(request);
-        Instant expirationDate = request.getBucket().plus(request.getExpiration());
 
-        rawOverrides.merge(
-            Pair.of(limitEntry, expirationDate), responses.get(limitEntry), Integer::sum);
+        rawOverrides.merge(limitEntry, responses.get(limitEntry), Integer::sum);
       }
       List<OverrideKeyRequest> overrides =
           rawOverrides
               .entrySet()
               .stream()
-              .map(
-                  kvp
-                      -> new OverrideKeyRequest(
-                          kvp.getKey().getLeft(), kvp.getKey().getRight(), kvp.getValue()))
+              .map(entry -> new OverrideKeyRequest(entry.getKey(), entry.getValue()))
               .collect(Collectors.toList());
       cache.overrideKeys(overrides);
     } catch (RuntimeException ex) {

@@ -50,11 +50,12 @@ import java.util.stream.Collectors;
  *
  * @author Guillaume Simard
  * @author Emile Fugulin
+ * @author Simon Toussaint
  * @since 1.0.0
  */
 public class InMemoryStorage implements LimitUsageStorage {
 
-  Map<Instant, Map<LimitKey, Capacity>> map = new ConcurrentHashMap<>();
+  Map<LimitKey, Capacity> map = new ConcurrentHashMap<>();
   private Clock clock = Clock.systemDefaultZone();
 
   @Override
@@ -62,13 +63,9 @@ public class InMemoryStorage implements LimitUsageStorage {
     Map<LimitKey, Integer> updatedEntries = new HashMap<>();
 
     for (AddAndGetRequest request : requests) {
-      Instant expirationDate = request.getBucket().plus(request.getExpiration());
-
       LimitKey limitKey = LimitKey.fromRequest(request);
 
-      Map<LimitKey, Capacity> mapWithThisExpiration =
-          map.computeIfAbsent(expirationDate, (key) -> new ConcurrentHashMap<>());
-      Capacity counter = mapWithThisExpiration.computeIfAbsent(limitKey, (key) -> new Capacity());
+      Capacity counter = map.computeIfAbsent(limitKey, (key) -> new Capacity());
       updatedEntries.put(limitKey, counter.addAndGet(request.getCost()));
     }
     removeExpiredEntries();
@@ -77,29 +74,26 @@ public class InMemoryStorage implements LimitUsageStorage {
   }
 
   @Override
-  public Map<LimitKey, Integer> debugCurrentLimitCounters() {
-    removeExpiredEntries();
-    return map.values()
-        .stream()
-        .flatMap(m -> m.entrySet().stream())
-        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
-  }
-
-  @Override
   public void close() {}
 
   public void overrideKeys(List<OverrideKeyRequest> overrides) {
     for (OverrideKeyRequest override : overrides) {
-      Map<LimitKey, Capacity> mapWithThisExpiration =
-          map.computeIfAbsent(override.getExpirationDate(), k -> new ConcurrentHashMap<>());
-      mapWithThisExpiration.put(override.getLimitKey(), new Capacity(override.getNewValue()));
+      map.put(override.getLimitKey(), new Capacity(override.getNewValue()));
     }
     removeExpiredEntries();
   }
 
-  public void applyOnEach(Consumer<Entry<Instant, Map<LimitKey, Capacity>>> action) {
+  public void applyOnEach(Consumer<Entry<LimitKey, Capacity>> action) {
     map.entrySet().forEach(action);
     removeExpiredEntries();
+  }
+
+  @Override
+  public Map<LimitKey, Integer> getCurrentLimitCounters() {
+    removeExpiredEntries();
+    return map.entrySet()
+        .stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get()));
   }
 
   @Override
@@ -129,20 +123,21 @@ public class InMemoryStorage implements LimitUsageStorage {
   private Map<LimitKey, Integer> filterLimitCountersBy(
       Predicate<Map.Entry<LimitKey, Capacity>>... predicates) {
     return Collections.unmodifiableMap(
-        map.values()
+        map.entrySet()
             .stream()
-            .flatMap(m -> m.entrySet().stream())
             .filter(Arrays.stream(predicates).reduce(Predicate::and).orElse(x -> true))
             .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get())));
   }
 
   private void removeExpiredEntries() {
     Instant now = Instant.now(clock);
-    Set<Instant> expiredDates =
+
+    Set<LimitKey> expiredLimitKeys =
         map.keySet()
             .stream()
-            .filter(expiration -> now.isAfter(expiration))
+            .filter(limitKey -> limitKey.getBucket().plus(limitKey.getExpiration()).isBefore(now))
             .collect(Collectors.toSet());
-    map.keySet().removeAll(expiredDates);
+
+    map.keySet().removeAll(expiredLimitKeys);
   }
 }
