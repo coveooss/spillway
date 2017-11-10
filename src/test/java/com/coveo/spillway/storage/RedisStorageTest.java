@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -64,6 +66,7 @@ public class RedisStorageTest {
   private static JedisPool jedis;
   private static RedisStorage storage;
 
+  @SuppressWarnings("resource")
   @BeforeClass
   public static void startRedis() throws IOException {
     try {
@@ -196,5 +199,19 @@ public class RedisStorageTest {
         storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
 
     assertThat(result).isEqualTo(6);
+  }
+
+  @Test
+  public void testBackwardCompatibilityWithPreviousKeys() {
+    // Versions pre 2.0.0-alpha.3 are not storing expiration
+    try (Jedis resource = jedis.getResource()) {
+      resource.set(
+          Stream.of(RedisStorage.DEFAULT_PREFIX, RESOURCE1, LIMIT1, PROPERTY1, TIMESTAMP.toString())
+              .collect(Collectors.joining(RedisStorage.KEY_SEPARATOR)),
+          "1");
+    }
+
+    Map<LimitKey, Integer> limitCounters = storage.getCurrentLimitCounters();
+    assertThat(limitCounters).hasSize(1);
   }
 }
