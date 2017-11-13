@@ -156,7 +156,10 @@ public class RedisStorage implements LimitUsageStorage {
                 keyComponents[3],
                 true,
                 Instant.parse(keyComponents[4]),
-                keyComponents.length == 6 ? Duration.parse(keyComponents[5]) : Duration.ZERO),
+                keyComponents.length == 6
+                    ? Duration.parse(keyComponents[5])
+                    : Duration
+                        .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
             value);
       }
     }
