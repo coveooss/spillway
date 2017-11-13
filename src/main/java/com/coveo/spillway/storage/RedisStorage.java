@@ -64,9 +64,10 @@ import redis.clients.jedis.Response;
 public class RedisStorage implements LimitUsageStorage {
   private static final Logger logger = LoggerFactory.getLogger(RedisStorage.class);
 
-  private static final String KEY_SEPARATOR = "|";
+  /*package*/ static final String DEFAULT_PREFIX = "spillway";
+  /*package*/ static final String KEY_SEPARATOR = "|";
+
   private static final String KEY_SEPARATOR_SUBSTITUTE = "_";
-  private static final String DEFAULT_PREFIX = "spillway";
   private static final String WILD_CARD_OPERATOR = "*";
 
   private final JedisPool jedisPool;
@@ -155,7 +156,10 @@ public class RedisStorage implements LimitUsageStorage {
                 keyComponents[3],
                 true,
                 Instant.parse(keyComponents[4]),
-                Duration.parse(keyComponents[5])),
+                keyComponents.length == 6
+                    ? Duration.parse(keyComponents[5])
+                    : Duration
+                        .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
             value);
       }
     }
