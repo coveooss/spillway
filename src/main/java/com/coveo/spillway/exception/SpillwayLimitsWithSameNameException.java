@@ -1,6 +1,6 @@
 package com.coveo.spillway.exception;
 
-public class SpillwayLimitsWithSameNameException extends SpillwayException {
+public class SpillwayLimitsWithSameNameException extends IllegalArgumentException {
   private static final long serialVersionUID = -327233779708979738L;
 
   private static final String ERROR_MESSAGE = "Some limits have the same name";
