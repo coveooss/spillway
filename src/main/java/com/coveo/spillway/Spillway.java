@@ -76,59 +76,88 @@ public class Spillway<T> {
   }
 
   /**
-   * Behave like {@link #call(Object, int)} with {@code cost} of one.
+   * Behaves like {@link #call(Object, int)} with {@code cost} of one.
    *
    * @see #call(Object, int)
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
-   * @throws SpillwayLimitExceededException If one the enforced limit is exceeded
+   * @throws SpillwayLimitExceededException If one the enforced limits is exceeded
    */
   public void call(T context) throws SpillwayLimitExceededException {
     call(context, 1);
   }
 
   /**
-   * Verify if the query should be throttled using the specified cost.
+   * Verifies if the query should be throttled using the specified cost.
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
-   * @param cost The cost of the query
-   * @throws SpillwayLimitExceededException If one the enforced limit is exceeded
+   * @param cost The cost of the query, must be greater than zero
+   * @throws SpillwayLimitExceededException If one the enforced limits is exceeded
    */
   public void call(T context, int cost) throws SpillwayLimitExceededException {
-    List<LimitDefinition> exceededLimits = getExceededLimits(context, cost);
+    List<LimitDefinition> exceededLimits = getExceededLimits(context, cost, true);
     if (!exceededLimits.isEmpty()) {
       throw new SpillwayLimitExceededException(exceededLimits, context, cost);
     }
   }
 
   /**
-   * Behave like {@link #tryCall(Object, int)} with {@code cost} of one.
+   * Behaves like {@link #tryCall(Object, int)} with {@code cost} of one.
    *
    * @see #tryCall(Object, int)
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
-   * @return False if one the enforced limit is exceeded, true otherwise
+   * @return False if one the enforced limits is exceeded, true otherwise
    */
   public boolean tryCall(T context) {
     return tryCall(context, 1);
   }
 
   /**
-   * Verify if the query should be throttled using the specified cost.
+   * Verifies if the query should be throttled using the specified cost.
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
-   * @param cost The cost of the query
-   * @return False if one the enforced limit is exceeded, true otherwise
+   * @param cost The cost of the query, greater than zero
+   * @return False if one the enforced limits is exceeded, true otherwise
    */
   public boolean tryCall(T context, int cost) {
-    return getExceededLimits(context, cost).isEmpty();
+    return getExceededLimits(context, cost, true).isEmpty();
   }
 
-  private List<LimitDefinition> getExceededLimits(T context, int cost) {
+  /**
+   * Behaves like {@link #checkLimit(Object, int)} with {@code cost} of one.
+   *
+   * @see #checkLimit(Object, int)
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return False if one the enforced limits would be exceeded, true otherwise
+   */
+  public boolean checkLimit(T context) {
+    return checkLimit(context, 1);
+  }
+
+  /**
+   * Verifies if the given limit will be exceeded for the given cost without updating the limit storage
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @param cost The cost of the query, must be greater than zero
+   * @return False if one the enforced limits would be exceeded, true otherwise
+   */
+  public boolean checkLimit(T context, int cost) {
+    return getExceededLimits(context, cost, false).isEmpty();
+  }
+
+  private List<LimitDefinition> getExceededLimits(T context, int cost, boolean shouldUpdateLimit) {
+    if (cost < 1) {
+      throw new IllegalArgumentException("'cost' must be greater than zero");
+    }
+
     Instant now = Instant.now(clock);
     List<AddAndGetRequest> requests = buildRequestsFromLimits(context, 0, now);
 
@@ -144,7 +173,9 @@ public class Spillway<T> {
                 .findFirst()
                 .get();
 
-        handleTriggers(context, cost, now, result.getValue() + cost, limit);
+        if (shouldUpdateLimit) {
+          handleTriggers(context, cost, now, result.getValue() + cost, limit);
+        }
 
         if (result.getValue() + cost > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
@@ -159,7 +190,7 @@ public class Spillway<T> {
           results);
     }
 
-    if (exceededLimits.isEmpty()) {
+    if (shouldUpdateLimit && exceededLimits.isEmpty()) {
       requests = buildRequestsFromLimits(context, cost, now);
       storage.addAndGet(requests);
     }
