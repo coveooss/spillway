@@ -146,7 +146,7 @@ public class RedisStorage implements LimitUsageStorage {
       Set<String> keys = jedis.keys(keyPattern);
       for (String key : keys) {
         String valueAsString = jedis.get(key);
-        if (valueAsString != null && !valueAsString.equals("")) {
+        if (StringUtils.isNotEmpty(valueAsString)) {
           int value = Integer.parseInt(valueAsString);
 
           String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
