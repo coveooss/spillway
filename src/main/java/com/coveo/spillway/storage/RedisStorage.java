@@ -163,6 +163,8 @@ public class RedisStorage implements LimitUsageStorage {
                       : Duration
                           .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
               value);
+        } else {
+          logger.info("Key '{}' has no value and will not be included in counters", key);
         }
       }
     }
