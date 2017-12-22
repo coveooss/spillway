@@ -23,6 +23,7 @@
 package com.coveo.spillway.storage;
 
 import static com.google.common.truth.Truth.*;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -37,8 +38,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.coveo.spillway.limit.LimitKey;
+import com.google.common.collect.Sets;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -57,6 +58,9 @@ public class RedisStorageTest {
   private static final String LIMIT2 = "someOtherLimit";
   private static final String PROPERTY1 = "someProperty";
   private static final String PROPERTY2 = "someOtherProperty";
+  private static final String KEY1 = "someKey|2|3|4|2007-12-03T10:15:30.00Z";
+  private static final String KEY2 = "someOtherKey";
+  private static final String KEY3 = "yetAnotherKey";
   private static final Duration EXPIRATION = Duration.ofHours(1);
   private static final Instant TIMESTAMP = Instant.now();
 
@@ -213,5 +217,21 @@ public class RedisStorageTest {
 
     Map<LimitKey, Integer> limitCounters = storage.getCurrentLimitCounters();
     assertThat(limitCounters).hasSize(1);
+  }
+
+  @Test
+  public void nullAndEmptyValueDoNotCauseExceptionWhenGettingLimits() {
+    Jedis jedisMock = mock(Jedis.class);
+    when(jedisMock.keys(anyString())).thenReturn(Sets.newHashSet(KEY1, KEY2, KEY3));
+    when(jedisMock.get(KEY1)).thenReturn("12");
+    when(jedisMock.get(KEY2)).thenReturn(null);
+    when(jedisMock.get(KEY3)).thenReturn("");
+    JedisPool jedisPool = mock(JedisPool.class);
+    when(jedisPool.getResource()).thenReturn(jedisMock);
+    RedisStorage redisStorage = RedisStorage.builder().withJedisPool(jedisPool).build();
+
+    Map<LimitKey, Integer> counters = redisStorage.getCurrentLimitCounters();
+
+    assertThat(counters.values()).containsExactly(12);
   }
 }
