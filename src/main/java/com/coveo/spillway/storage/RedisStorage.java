@@ -145,22 +145,27 @@ public class RedisStorage implements LimitUsageStorage {
     try (Jedis jedis = jedisPool.getResource()) {
       Set<String> keys = jedis.keys(keyPattern);
       for (String key : keys) {
-        int value = Integer.parseInt(jedis.get(key));
+        String valueAsString = jedis.get(key);
+        if (StringUtils.isNotEmpty(valueAsString)) {
+          int value = Integer.parseInt(valueAsString);
 
-        String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
+          String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
 
-        counters.put(
-            new LimitKey(
-                keyComponents[1],
-                keyComponents[2],
-                keyComponents[3],
-                true,
-                Instant.parse(keyComponents[4]),
-                keyComponents.length == 6
-                    ? Duration.parse(keyComponents[5])
-                    : Duration
-                        .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
-            value);
+          counters.put(
+              new LimitKey(
+                  keyComponents[1],
+                  keyComponents[2],
+                  keyComponents[3],
+                  true,
+                  Instant.parse(keyComponents[4]),
+                  keyComponents.length == 6
+                      ? Duration.parse(keyComponents[5])
+                      : Duration
+                          .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
+              value);
+        } else {
+          logger.info("Key '{}' has no value and will not be included in counters", key);
+        }
       }
     }
     return Collections.unmodifiableMap(counters);
