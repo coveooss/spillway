@@ -73,3 +73,7 @@ The java documentation is available here: https://coveo.github.io/spillway/
     spillway.tryCall("john", 11); // false
     spillway.tryCall("gina", 20); // true
 ```
+
+## External Resources
+
+[cirrus-up-cloud](https://github.com/cirrus-up-cloud) wrote a [nice blog post](https://www.cirrusup.cloud/limit-accepted-requests-using-aws-elasticache/) about using Spillway on AWS with Elasticache.
