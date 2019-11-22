@@ -74,6 +74,20 @@ public class InMemoryStorage implements LimitUsageStorage {
   }
 
   @Override
+  public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
+    Map<LimitKey, Integer> updatedEntries = new HashMap<>();
+    requests.forEach(
+        request -> {
+          LimitKey limitKey = LimitKey.fromRequest(request);
+          Capacity counter = map.computeIfAbsent(limitKey, (key) -> new Capacity());
+          updatedEntries.put(
+              limitKey, counter.addAndGetWithLimit(request.getCost(), request.getLimit()));
+        });
+    removeExpiredEntries();
+    return updatedEntries;
+  }
+
+  @Override
   public void close() {}
 
   public void overrideKeys(List<OverrideKeyRequest> overrides) {

@@ -6,11 +6,13 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,7 +53,7 @@ public class SpillwayFunctionalTests {
 
   private SpillwayFactory inMemoryFactory;
 
-  private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
+  private static final Logger logger = LoggerFactory.getLogger(SpillwayFunctionalTests.class);
 
   private static RedisServer redisServer;
   private static JedisPool jedis;
@@ -120,6 +122,61 @@ public class SpillwayFunctionalTests {
     assertThat(storage.getCurrentLimitCounters()).hasSize(1);
     Thread.sleep(2000);
     assertThat(storage.getCurrentLimitCounters()).hasSize(0);
+  }
+
+  @Test
+  public void syncPerformanceTryCallAndTryUpdateAndVerifyLimit() {
+    int numberOfCalls = ONE_MILLION;
+
+    Limit<String> ipLimit =
+        LimitBuilder.of("perIp").to(numberOfCalls).per(Duration.ofHours(1)).build();
+    SpillwayFactory redisFactory = new SpillwayFactory(storage);
+    Spillway<String> spillway1 = redisFactory.enforce("testResource", ipLimit);
+    int numberOfRuns = 5;
+    OptionalLong sum =
+        IntStream.range(0, numberOfRuns)
+            .mapToLong(
+                j -> {
+                  jedis.getResource().flushDB();
+                  Stopwatch stopwatch = Stopwatch.createStarted();
+                  for (int i = 0; i < numberOfCalls; i++) {
+                    spillway1.tryUpdateAndVerifyLimit("testResource");
+                  }
+                  stopwatch.stop();
+                  return (stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                })
+            .reduce(Long::sum);
+
+    float avgTime = (float) sum.orElse(0) / numberOfRuns;
+    float rate = (float) sum.orElse(0) / (numberOfRuns * numberOfCalls);
+    logger.info(
+        "tryUpdateAndVerifyLimit {} times took {} ms (average of {} ms per call)",
+        numberOfCalls,
+        avgTime,
+        rate);
+
+    jedis.getResource().close();
+    jedis = new JedisPool("localhost", 6389);
+    ipLimit = LimitBuilder.of("perIp").to(numberOfCalls).per(Duration.ofHours(1)).build();
+    redisFactory = new SpillwayFactory(storage);
+    Spillway<String> spillway2 = redisFactory.enforce("testResource", ipLimit);
+    sum =
+        IntStream.range(0, numberOfRuns)
+            .mapToLong(
+                j -> {
+                  jedis.getResource().flushDB();
+                  Stopwatch stopwatch = Stopwatch.createStarted();
+                  for (int i = 0; i < numberOfCalls; i++) {
+                    spillway2.tryCall("testResource");
+                  }
+                  stopwatch.stop();
+                  return (stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                })
+            .reduce(Long::sum);
+    avgTime = (float) sum.orElse(0) / numberOfRuns;
+    rate = (float) sum.orElse(0) / (numberOfRuns * numberOfCalls);
+    logger.info(
+        "tryCall {} times took {} ms (average of {} ms per call)", numberOfCalls, avgTime, rate);
   }
 
   @Test

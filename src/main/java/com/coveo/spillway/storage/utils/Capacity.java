@@ -47,6 +47,11 @@ public class Capacity {
     this.total = new AtomicInteger(total);
   }
 
+  public Integer addAndGetWithLimit(int cost, int limit) {
+    return delta.accumulateAndGet(cost, (left, right) -> left > limit ? left : left + right)
+        + total.get();
+  }
+
   public Integer addAndGet(int cost) {
     return delta.addAndGet(cost) + total.get();
   }

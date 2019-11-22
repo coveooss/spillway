@@ -93,11 +93,37 @@ public class Spillway<T> {
    *
    * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
    *                will be applied if it was specified
+   * @throws SpillwayLimitExceededException If one the enforced limits is exceeded
+   */
+  public void updateAndVerifyLimit(T context) throws SpillwayLimitExceededException {
+    updateAndVerifyLimit(context, 1);
+  }
+
+  /**
+   * Verifies if the query should be throttled using the specified cost.
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
    * @param cost The cost of the query, must be greater than zero
    * @throws SpillwayLimitExceededException If one the enforced limits is exceeded
    */
   public void call(T context, int cost) throws SpillwayLimitExceededException {
     List<LimitDefinition> exceededLimits = getExceededLimits(context, cost, true);
+    if (!exceededLimits.isEmpty()) {
+      throw new SpillwayLimitExceededException(exceededLimits, context, cost);
+    }
+  }
+
+  /**
+   * Verifies if the query should be throttled using the specified cost.
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @param cost The cost of the query, must be greater than zero
+   * @throws SpillwayLimitExceededException If one the enforced limits is exceeded
+   */
+  public void updateAndVerifyLimit(T context, int cost) throws SpillwayLimitExceededException {
+    List<LimitDefinition> exceededLimits = updateAndVerifyExceededLimits(context, cost);
     if (!exceededLimits.isEmpty()) {
       throw new SpillwayLimitExceededException(exceededLimits, context, cost);
     }
@@ -126,6 +152,31 @@ public class Spillway<T> {
    */
   public boolean tryCall(T context, int cost) {
     return getExceededLimits(context, cost, true).isEmpty();
+  }
+
+  /**
+   * Behaves like {@link #tryUpdateAndVerifyLimit(Object, int)} with {@code cost} of one.
+   *
+   * @see #tryUpdateAndVerifyLimit(Object, int)
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @return False if one the enforced limits is exceeded, true otherwise
+   */
+  public boolean tryUpdateAndVerifyLimit(T context) {
+    return tryUpdateAndVerifyLimit(context, 1);
+  }
+
+  /**
+   * Verifies if the query should be throttled using the specified cost. (This API assures updating and verifying the limit will be a thread safe operation)
+   *
+   * @param context Either the name of the limit OR the object on which the propertyExtractor ({@link LimitBuilder#of(String, java.util.function.Function)})
+   *                will be applied if it was specified
+   * @param cost The cost of the query, greater than zero
+   * @return False if one the enforced limits is exceeded, true otherwise
+   */
+  public boolean tryUpdateAndVerifyLimit(T context, int cost) {
+    return updateAndVerifyExceededLimits(context, cost).isEmpty();
   }
 
   /**
@@ -198,7 +249,47 @@ public class Spillway<T> {
     return exceededLimits;
   }
 
+  private List<LimitDefinition> updateAndVerifyExceededLimits(T context, int cost) {
+    if (cost < 1) {
+      throw new IllegalArgumentException("'cost' must be greater than zero");
+    }
+
+    Instant now = Instant.now(clock);
+    List<AddAndGetRequest> requests = buildRequestsFromLimits(context, cost, now);
+
+    Map<LimitKey, Integer> results = storage.addAndGetWithLimit(requests);
+
+    List<LimitDefinition> exceededLimits = new ArrayList<>();
+    if (results.size() == limits.size()) {
+      for (Entry<LimitKey, Integer> result : results.entrySet()) {
+        Limit<T> limit =
+            limits
+                .stream()
+                .filter(entry -> entry.getName().equals(result.getKey().getLimitName()))
+                .findFirst()
+                .get();
+
+        handleTriggers(context, cost, now, result.getValue(), limit);
+        if (result.getValue() > limit.getCapacity(context)) {
+          exceededLimits.add(limit.getDefinition());
+        }
+      }
+    } else {
+      logger.error(
+          "Something went very wrong. We sent {} limits to the backend but received {} responses. Assuming that no limits were exceeded. Limits: {}. Results: {}.",
+          limits.size(),
+          results.size(),
+          limits,
+          results);
+    }
+    return exceededLimits;
+  }
+
   private List<AddAndGetRequest> buildRequestsFromLimits(T context, int cost, Instant now) {
+    // The existing API respect the minimum limit of all the limits
+    // Here, we select the minimum limit
+    int minLimit =
+        limits.stream().map(limit -> limit.getCapacity(context)).min(Integer::compareTo).orElse(0);
     return limits
         .stream()
         .map(
@@ -206,6 +297,7 @@ public class Spillway<T> {
                 -> new AddAndGetRequest.Builder()
                     .withResource(resource)
                     .withLimitName(limit.getName())
+                    .withLimit(minLimit)
                     .withProperty(limit.getProperty(context))
                     .withDistributed(limit.isDistributed())
                     .withExpiration(limit.getExpiration(context))
