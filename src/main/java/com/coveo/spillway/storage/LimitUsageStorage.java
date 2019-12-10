@@ -116,6 +116,15 @@ public interface LimitUsageStorage {
   Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests);
 
   /**
+   * Processes all {@link AddAndGetRequest} and returns the current count for each limit while respecting the request max limit.
+   * When max limit is met, it will return the limit + cost.
+   *
+   * @param requests An collection of {@link AddAndGetRequest} that wrap all necessary information to perform the increments
+   * @return A Map of the limits and their current count
+   */
+  Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests);
+
+  /**
    * Returns all enforced limits with their current count
    *
    * <p><b>Use with caution, this could be a costly operation</b></p>

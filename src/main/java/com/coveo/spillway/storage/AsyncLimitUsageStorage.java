@@ -75,6 +75,14 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
   }
 
   @Override
+  public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
+    Map<LimitKey, Integer> cachedEntries = cache.addAndGetWithLimit(requests);
+    executorService.submit(() -> sendAndCacheRequests(requests));
+
+    return cachedEntries;
+  }
+
+  @Override
   public Map<LimitKey, Integer> getCurrentLimitCounters() {
     return wrappedLimitUsageStorage.getCurrentLimitCounters();
   }
