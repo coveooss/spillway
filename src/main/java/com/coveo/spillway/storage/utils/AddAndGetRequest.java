@@ -47,6 +47,7 @@ public class AddAndGetRequest {
   private Duration expiration;
   private Instant eventTimestamp;
   private int cost;
+  private int limit;
 
   private Instant bucket;
 
@@ -82,6 +83,10 @@ public class AddAndGetRequest {
     return bucket;
   }
 
+  public int getLimit() {
+    return limit;
+  }
+
   private AddAndGetRequest(Builder builder) {
     resource = builder.resource;
     limitName = builder.limitName;
@@ -90,6 +95,7 @@ public class AddAndGetRequest {
     expiration = builder.expiration;
     eventTimestamp = builder.eventTimestamp;
     cost = builder.cost;
+    limit = builder.limit;
     bucket = LimitUtils.calculateBucket(eventTimestamp, expiration);
   }
 
@@ -115,6 +121,7 @@ public class AddAndGetRequest {
     private Duration expiration;
     private Instant eventTimestamp;
     private int cost = 1;
+    private int limit;
 
     public Builder() {}
 
@@ -126,6 +133,7 @@ public class AddAndGetRequest {
       this.expiration = other.expiration;
       this.eventTimestamp = other.eventTimestamp;
       this.cost = other.cost;
+      this.limit = other.limit;
     }
 
     public Builder withResource(String val) {
@@ -163,6 +171,11 @@ public class AddAndGetRequest {
       return this;
     }
 
+    public Builder withLimit(int val) {
+      limit = val;
+      return this;
+    }
+
     public AddAndGetRequest build() {
       return new AddAndGetRequest(this);
     }
@@ -176,6 +189,7 @@ public class AddAndGetRequest {
     AddAndGetRequest that = (AddAndGetRequest) o;
 
     if (cost != that.cost) return false;
+    if (limit != that.limit) return false;
     if (resource != null ? !resource.equals(that.resource) : that.resource != null) return false;
     if (limitName != null ? !limitName.equals(that.limitName) : that.limitName != null)
       return false;
@@ -196,6 +210,7 @@ public class AddAndGetRequest {
     result = 31 * result + (expiration != null ? expiration.hashCode() : 0);
     result = 31 * result + (eventTimestamp != null ? eventTimestamp.hashCode() : 0);
     result = 31 * result + cost;
+    result = 31 * result + limit;
     result = 31 * result + (bucket != null ? bucket.hashCode() : 0);
     return result;
   }
@@ -220,6 +235,8 @@ public class AddAndGetRequest {
         + cost
         + ", bucket="
         + bucket
+        + ", limit="
+        + limit
         + '}';
   }
 }

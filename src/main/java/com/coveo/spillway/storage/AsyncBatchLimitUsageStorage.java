@@ -121,6 +121,11 @@ public class AsyncBatchLimitUsageStorage implements LimitUsageStorage {
     return cache.addAndGet(requests);
   }
 
+  @Override
+  public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
+    return cache.addAndGetWithLimit(requests);
+  }
+
   public Map<LimitKey, Integer> debugCacheLimitCounters() {
     return cache.getCurrentLimitCounters();
   }

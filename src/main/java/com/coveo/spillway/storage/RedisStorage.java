@@ -69,6 +69,12 @@ public class RedisStorage implements LimitUsageStorage {
 
   private static final String KEY_SEPARATOR_SUBSTITUTE = "_";
   private static final String WILD_CARD_OPERATOR = "*";
+  private static final String COUNTER_SCRIPT =
+      "local counter = redis.call('INCRBY', KEYS[1], ARGV[1]); "
+          + "if counter  > tonumber(ARGV[2]) + tonumber(ARGV[1])"
+          + "then counter = redis.call('INCRBY', KEYS[1], -ARGV[1]) "
+          + "end "
+          + "return tostring(counter)";
 
   private final JedisPool jedisPool;
   private final String keyPrefix;
@@ -116,6 +122,50 @@ public class RedisStorage implements LimitUsageStorage {
         .entrySet()
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, kvp -> kvp.getValue().get().intValue()));
+  }
+
+  @Override
+  public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
+    Map<LimitKey, Response<String>> responses = new LinkedHashMap<>();
+
+    try (Jedis jedis = jedisPool.getResource()) {
+      try (Pipeline pipeline = jedis.pipelined()) {
+        requests.forEach(
+            request -> {
+              pipeline.multi();
+              LimitKey limitKey = LimitKey.fromRequest(request);
+              String redisKey =
+                  Stream.of(
+                          keyPrefix,
+                          limitKey.getResource(),
+                          limitKey.getLimitName(),
+                          limitKey.getProperty(),
+                          limitKey.getBucket().toString(),
+                          limitKey.getExpiration().toString())
+                      .map(RedisStorage::clean)
+                      .collect(Collectors.joining(KEY_SEPARATOR));
+
+              responses.put(
+                  limitKey,
+                  pipeline.eval(
+                      COUNTER_SCRIPT,
+                      Collections.singletonList(redisKey),
+                      Arrays.asList(
+                          String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
+              pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
+              pipeline.exec();
+            });
+        pipeline.sync();
+      } catch (IOException e) {
+        logger.error("Unable to close redis storage pipeline.", e);
+      }
+    }
+
+    return responses
+        .entrySet()
+        .stream()
+        .collect(
+            Collectors.toMap(Map.Entry::getKey, kvp -> Integer.parseInt(kvp.getValue().get())));
   }
 
   @Override
