@@ -24,8 +24,7 @@ package com.coveo.spillway.storage;
 
 import com.coveo.spillway.exception.SpillwayLuaResourceNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -38,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,10 +79,9 @@ public class RedisStorage implements LimitUsageStorage {
 
   private static String getCounterLuaScript() throws SpillwayLuaResourceNotFoundException {
     try {
-      return new String(
-          Files.readAllBytes(
-              Paths.get(
-                  RedisStorage.class.getClassLoader().getResource(COUNTER_LUA_SCRIPT).getPath())));
+      return IOUtils.toString(
+          RedisStorage.class.getClassLoader().getResourceAsStream(COUNTER_LUA_SCRIPT),
+          StandardCharsets.UTF_8);
     } catch (IOException e) {
       throw new SpillwayLuaResourceNotFoundException(
           "Error reading Resource: " + COUNTER_LUA_SCRIPT, e);
