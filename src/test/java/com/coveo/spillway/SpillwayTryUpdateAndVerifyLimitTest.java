@@ -516,7 +516,7 @@ public class SpillwayTryUpdateAndVerifyLimitTest {
     InMemoryStorage inMemoryStorage = new InMemoryStorage();
     SpillwayFactory inMemoryFactory = new SpillwayFactory(inMemoryStorage);
     Spillway<User> spillway = inMemoryFactory.enforce("testResource", limit);
-    // In simple this test we want to test for 30 seconds with [100] | [10] each 50 milliseconds.
+    // In this test we want to test for 30 seconds with [100] | [10] each 50 milliseconds.
     // After 100/30 sec. the next batch of 10 which some calls should be throttled.
     IntStream.range(0, 100).forEach(i -> spillway.tryUpdateAndVerifyLimit(john));
     // Wait for the next window/bucket
