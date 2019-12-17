@@ -29,8 +29,11 @@ import com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Assert;
 import org.junit.Before;
@@ -223,7 +226,7 @@ public class SpillwayTryUpdateAndVerifyLimitTest {
 
     Map<LimitKey, Integer> counters = inMemoryStorage.getCurrentLimitCounters();
 
-    assertThat(counters.values()).containsExactly(1);
+    assertThat(counters.values()).containsExactly(0);
   }
 
   @Test
@@ -396,7 +399,7 @@ public class SpillwayTryUpdateAndVerifyLimitTest {
     assertThat(spillway.tryUpdateAndVerifyLimit(john, 1)).isFalse();
 
     // Fake sleep two seconds to ensure that we bump to another bucket
-    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(4));
 
     assertThat(spillway.tryUpdateAndVerifyLimit(john, A_CAPACITY)).isTrue();
   }
@@ -502,5 +505,34 @@ public class SpillwayTryUpdateAndVerifyLimitTest {
                       .reduce(Boolean::logicalAnd);
               Assert.assertFalse(limitReached.orElse(true));
             });
+  }
+
+  @Test
+  public void testSlidingWindowForTryUpdateAndVerifyLimit() throws Exception {
+    // This is needed in order to round up bucket initiation time.
+    Thread.sleep((60 - LocalDateTime.now(Clock.systemDefaultZone()).getSecond()) * 1000);
+    Limit<User> limit =
+        LimitBuilder.of("perUser", User::getName).to(100).per(Duration.ofSeconds(30)).build();
+    InMemoryStorage inMemoryStorage = new InMemoryStorage();
+    SpillwayFactory inMemoryFactory = new SpillwayFactory(inMemoryStorage);
+    Spillway<User> spillway = inMemoryFactory.enforce("testResource", limit);
+    // In simple this test we want to test for 30 seconds with [100] | [10] each 50 milliseconds.
+    // After 100/30 sec. the next batch of 10 which some calls should be throttled.
+    IntStream.range(0, 100).forEach(i -> spillway.tryUpdateAndVerifyLimit(john));
+    // Wait for the next window/bucket
+    Thread.sleep((30 - LocalDateTime.now(Clock.systemDefaultZone()).getSecond()) * 1000);
+    List<Boolean> results =
+        IntStream.range(0, 10)
+            .mapToObj(
+                i -> {
+                  try {
+                    Thread.sleep(50);
+                  } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                  }
+                  return spillway.tryUpdateAndVerifyLimit(john);
+                })
+            .collect(Collectors.toList());
+    assertThat(results).containsAllOf(true, false);
   }
 }

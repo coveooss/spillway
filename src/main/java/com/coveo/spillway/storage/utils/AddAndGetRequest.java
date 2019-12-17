@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import com.coveo.spillway.limit.utils.LimitUtils;
+import java.util.Objects;
 
 /**
  * Container of properties necessary to increase the current current value of
@@ -50,6 +51,9 @@ public class AddAndGetRequest {
   private int limit;
 
   private Instant bucket;
+  private Instant previousBucket;
+
+  private float previousBucketCounterPercentage;
 
   public String getResource() {
     return resource;
@@ -83,8 +87,16 @@ public class AddAndGetRequest {
     return bucket;
   }
 
+  public Instant getPreviousBucket() {
+    return previousBucket;
+  }
+
   public int getLimit() {
     return limit;
+  }
+
+  public float getPreviousBucketCounterPercentage() {
+    return previousBucketCounterPercentage;
   }
 
   private AddAndGetRequest(Builder builder) {
@@ -96,7 +108,13 @@ public class AddAndGetRequest {
     eventTimestamp = builder.eventTimestamp;
     cost = builder.cost;
     limit = builder.limit;
+    previousBucketCounterPercentage = builder.previousBucketCounterPercentage;
     bucket = LimitUtils.calculateBucket(eventTimestamp, expiration);
+    previousBucket = LimitUtils.calculatePreviousBucket(eventTimestamp, expiration);
+    previousBucketCounterPercentage =
+        1.0f
+            - (float) (eventTimestamp.toEpochMilli() - bucket.toEpochMilli())
+                / expiration.toMillis();
   }
 
   /**
@@ -122,6 +140,7 @@ public class AddAndGetRequest {
     private Instant eventTimestamp;
     private int cost = 1;
     private int limit;
+    private float previousBucketCounterPercentage;
 
     public Builder() {}
 
@@ -134,6 +153,7 @@ public class AddAndGetRequest {
       this.eventTimestamp = other.eventTimestamp;
       this.cost = other.cost;
       this.limit = other.limit;
+      this.previousBucketCounterPercentage = other.previousBucketCounterPercentage;
     }
 
     public Builder withResource(String val) {
@@ -199,6 +219,11 @@ public class AddAndGetRequest {
     if (eventTimestamp != null
         ? !eventTimestamp.equals(that.eventTimestamp)
         : that.eventTimestamp != null) return false;
+    if (previousBucket != null
+        ? previousBucket.equals(that.previousBucket)
+        : that.previousBucket != null) return false;
+    if (Float.compare(previousBucketCounterPercentage, that.previousBucketCounterPercentage) != 0)
+      return false;
     return bucket != null ? bucket.equals(that.bucket) : that.bucket == null;
   }
 
@@ -212,6 +237,8 @@ public class AddAndGetRequest {
     result = 31 * result + cost;
     result = 31 * result + limit;
     result = 31 * result + (bucket != null ? bucket.hashCode() : 0);
+    result = 31 * result + (previousBucket != null ? previousBucket.hashCode() : 0);
+    result = 31 * result + Objects.hashCode(previousBucketCounterPercentage);
     return result;
   }
 
@@ -235,8 +262,12 @@ public class AddAndGetRequest {
         + cost
         + ", bucket="
         + bucket
+        + ", previous bucket="
+        + previousBucket
         + ", limit="
         + limit
+        + ", previousBucketCounterPercentage="
+        + previousBucketCounterPercentage
         + '}';
   }
 }

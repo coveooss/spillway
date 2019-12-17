@@ -38,4 +38,11 @@ public class LimitUtils {
     return Instant.ofEpochMilli(
         (timestamp.toEpochMilli() / limitDuration.toMillis()) * limitDuration.toMillis());
   }
+
+  public static Instant calculatePreviousBucket(Instant timestamp, Duration limitDuration) {
+    return Instant.ofEpochMilli(
+        (timestamp.toEpochMilli() - limitDuration.toMillis())
+            / limitDuration.toMillis()
+            * limitDuration.toMillis());
+  }
 }

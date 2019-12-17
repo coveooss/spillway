@@ -146,6 +146,8 @@ public class LimitKey {
         + ", bucket="
         + bucket
         + '\''
+        + ", previous bucket="
+        + '\''
         + ", expiration="
         + expiration
         + '}';
@@ -158,6 +160,16 @@ public class LimitKey {
         request.getProperty(),
         request.isDistributed(),
         request.getBucket(),
+        request.getExpiration());
+  }
+
+  public static LimitKey previousLimitKeyFromRequest(AddAndGetRequest request) {
+    return new LimitKey(
+        request.getResource(),
+        request.getLimitName(),
+        request.getProperty(),
+        request.isDistributed(),
+        request.getPreviousBucket(),
         request.getExpiration());
   }
 }

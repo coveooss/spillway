@@ -22,7 +22,10 @@
  */
 package com.coveo.spillway.storage;
 
+import com.coveo.spillway.exception.SpillwayLuaResourceNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -69,15 +72,22 @@ public class RedisStorage implements LimitUsageStorage {
 
   private static final String KEY_SEPARATOR_SUBSTITUTE = "_";
   private static final String WILD_CARD_OPERATOR = "*";
-  private static final String COUNTER_SCRIPT =
-      "local counter = redis.call('INCRBY', KEYS[1], ARGV[1]); "
-          + "if counter  > tonumber(ARGV[2]) + tonumber(ARGV[1])"
-          + "then counter = redis.call('INCRBY', KEYS[1], -ARGV[1]) "
-          + "end "
-          + "return tostring(counter)";
-
+  private static final String COUNTER_SCRIPT = getCounterLuaScript();
   private final JedisPool jedisPool;
   private final String keyPrefix;
+  private static final String COUNTER_LUA_SCRIPT = "com/coveo/spillway/storage/redisCounter.lua";
+
+  private static String getCounterLuaScript() throws SpillwayLuaResourceNotFoundException {
+    try {
+      return new String(
+          Files.readAllBytes(
+              Paths.get(
+                  RedisStorage.class.getClassLoader().getResource(COUNTER_LUA_SCRIPT).getPath())));
+    } catch (IOException e) {
+      throw new SpillwayLuaResourceNotFoundException(
+          "Error reading Resource: " + COUNTER_LUA_SCRIPT, e);
+    }
+  }
 
   RedisStorage(Builder builder) {
     this.jedisPool = builder.jedisPool;
@@ -134,6 +144,7 @@ public class RedisStorage implements LimitUsageStorage {
             request -> {
               pipeline.multi();
               LimitKey limitKey = LimitKey.fromRequest(request);
+              LimitKey previousLimitKey = LimitKey.previousLimitKeyFromRequest(request);
               String redisKey =
                   Stream.of(
                           keyPrefix,
@@ -144,14 +155,25 @@ public class RedisStorage implements LimitUsageStorage {
                           limitKey.getExpiration().toString())
                       .map(RedisStorage::clean)
                       .collect(Collectors.joining(KEY_SEPARATOR));
-
+              String previousRedisKey =
+                  Stream.of(
+                          keyPrefix,
+                          previousLimitKey.getResource(),
+                          previousLimitKey.getLimitName(),
+                          previousLimitKey.getProperty(),
+                          previousLimitKey.getBucket().toString(),
+                          previousLimitKey.getExpiration().toString())
+                      .map(RedisStorage::clean)
+                      .collect(Collectors.joining(KEY_SEPARATOR));
               responses.put(
                   limitKey,
                   pipeline.eval(
                       COUNTER_SCRIPT,
-                      Collections.singletonList(redisKey),
+                      Arrays.asList(redisKey, previousRedisKey),
                       Arrays.asList(
-                          String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
+                          String.valueOf(request.getCost()),
+                          String.valueOf(request.getLimit()),
+                          String.valueOf(request.getPreviousBucketCounterPercentage()))));
               pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
               pipeline.exec();
             });
@@ -160,12 +182,12 @@ public class RedisStorage implements LimitUsageStorage {
         logger.error("Unable to close redis storage pipeline.", e);
       }
     }
-
     return responses
         .entrySet()
         .stream()
         .collect(
-            Collectors.toMap(Map.Entry::getKey, kvp -> Integer.parseInt(kvp.getValue().get())));
+            Collectors.toMap(
+                Map.Entry::getKey, kvp -> (int) Math.ceil(Float.parseFloat(kvp.getValue().get()))));
   }
 
   @Override

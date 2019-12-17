@@ -22,6 +22,10 @@
  */
 package com.coveo.spillway.storage;
 
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
+import com.google.common.collect.Lists;
+import java.util.stream.IntStream;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -124,8 +128,73 @@ public class InMemoryStorageTest {
     assertThat(storage.getCurrentLimitCounters()).hasSize(1);
 
     // Fake sleep two seconds to ensure that we bump to another bucket
-    when(clock.instant()).thenReturn(Instant.now().plusSeconds(2));
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(4));
 
     assertThat(storage.getCurrentLimitCounters()).isEmpty();
+  }
+
+  @Test
+  public void calculateAndVerifySlidingWindowCount() {
+    when(clock.instant()).thenReturn(Instant.parse("2018-11-30T18:35:00.00Z"));
+    AddAndGetRequest.Builder addAndGetRequestBuilder =
+        new AddAndGetRequest.Builder()
+            .withCost(1)
+            .withEventTimestamp(Instant.parse("2018-11-30T18:35:26.00Z"))
+            .withExpiration(Duration.ofMinutes(1))
+            .withLimit(1000);
+    IntStream.range(0, 10)
+        .forEach(
+            i -> {
+              AddAndGetRequest addAndGetRequest =
+                  addAndGetRequestBuilder
+                      .withEventTimestamp(Instant.parse("2018-11-30T18:35:26.00Z"))
+                      .build();
+              storage.addAndGetWithLimit(Lists.newArrayList(addAndGetRequest));
+            });
+    when(clock.instant()).thenReturn(Instant.parse("2018-11-30T18:36:00.00Z"));
+
+    AddAndGetRequest addAndGetRequest =
+        addAndGetRequestBuilder
+            .withEventTimestamp(Instant.parse("2018-11-30T18:36:06.00Z"))
+            .build();
+    Assert.assertEquals(addAndGetRequest.getPreviousBucketCounterPercentage(), 0.9, 0.00001);
+    assertThat(
+            storage
+                .addAndGetWithLimit(Lists.newArrayList(addAndGetRequest))
+                .get(LimitKey.fromRequest(addAndGetRequest)))
+        .isEqualTo(9);
+
+    addAndGetRequest =
+        addAndGetRequestBuilder
+            .withEventTimestamp(Instant.parse("2018-11-30T18:36:15.00Z"))
+            .build();
+    Assert.assertEquals(addAndGetRequest.getPreviousBucketCounterPercentage(), 0.75, 0.00001);
+    assertThat(
+            storage
+                .addAndGetWithLimit(Lists.newArrayList(addAndGetRequest))
+                .get(LimitKey.fromRequest(addAndGetRequest)))
+        .isEqualTo(9);
+
+    addAndGetRequest =
+        addAndGetRequestBuilder
+            .withEventTimestamp(Instant.parse("2018-11-30T18:36:30.00Z"))
+            .build();
+    Assert.assertEquals(addAndGetRequest.getPreviousBucketCounterPercentage(), 0.5, 0.00001);
+    assertThat(
+            storage
+                .addAndGetWithLimit(Lists.newArrayList(addAndGetRequest))
+                .get(LimitKey.fromRequest(addAndGetRequest)))
+        .isEqualTo(7);
+
+    addAndGetRequest =
+        addAndGetRequestBuilder
+            .withEventTimestamp(Instant.parse("2018-11-30T18:36:45.00Z"))
+            .build();
+    Assert.assertEquals(addAndGetRequest.getPreviousBucketCounterPercentage(), 0.25, 0.00001);
+    assertThat(
+            storage
+                .addAndGetWithLimit(Lists.newArrayList(addAndGetRequest))
+                .get(LimitKey.fromRequest(addAndGetRequest)))
+        .isEqualTo(6);
   }
 }

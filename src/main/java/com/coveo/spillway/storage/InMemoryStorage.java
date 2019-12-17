@@ -79,11 +79,19 @@ public class InMemoryStorage implements LimitUsageStorage {
     requests.forEach(
         request -> {
           LimitKey limitKey = LimitKey.fromRequest(request);
+          LimitKey previousLimitKey = LimitKey.previousLimitKeyFromRequest(request);
           Capacity counter = map.computeIfAbsent(limitKey, (key) -> new Capacity());
+          int previousCounter =
+              (int)
+                  Math.ceil(
+                      (map.get(previousLimitKey) != null ? map.get(previousLimitKey).get() : 0)
+                          * request.getPreviousBucketCounterPercentage());
           updatedEntries.put(
-              limitKey, counter.addAndGetWithLimit(request.getCost(), request.getLimit()));
+              limitKey,
+              counter.addAndGetWithLimit(request.getCost(), request.getLimit(), previousCounter)
+                  + previousCounter);
+          removeExpiredEntries(request.getEventTimestamp());
         });
-    removeExpiredEntries();
     return updatedEntries;
   }
 
@@ -152,6 +160,20 @@ public class InMemoryStorage implements LimitUsageStorage {
             .filter(limitKey -> limitKey.getBucket().plus(limitKey.getExpiration()).isBefore(now))
             .collect(Collectors.toSet());
 
+    map.keySet().removeAll(expiredLimitKeys);
+  }
+
+  private void removeExpiredEntries(Instant timestamp) {
+    Set<LimitKey> expiredLimitKeys =
+        map.keySet()
+            .stream()
+            .filter(
+                limitKey
+                    -> limitKey
+                        .getBucket()
+                        .plus(limitKey.getExpiration().multipliedBy(2))
+                        .isBefore(timestamp))
+            .collect(Collectors.toSet());
     map.keySet().removeAll(expiredLimitKeys);
   }
 }

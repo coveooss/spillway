@@ -268,9 +268,9 @@ public class Spillway<T> {
                 .filter(entry -> entry.getName().equals(result.getKey().getLimitName()))
                 .findFirst()
                 .get();
-
-        handleTriggers(context, cost, now, result.getValue(), limit);
-        if (result.getValue() > limit.getCapacity(context)) {
+        int counterValue = result.getValue() + cost;
+        handleTriggers(context, cost, now, counterValue, limit);
+        if (counterValue > limit.getCapacity(context)) {
           exceededLimits.add(limit.getDefinition());
         }
       }
