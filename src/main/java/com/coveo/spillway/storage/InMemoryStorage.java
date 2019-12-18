@@ -107,7 +107,6 @@ public class InMemoryStorage implements LimitUsageStorage {
 
   public void applyOnEach(Consumer<Entry<LimitKey, Capacity>> action) {
     map.entrySet().forEach(action);
-    removeExpiredEntries();
   }
 
   @Override
