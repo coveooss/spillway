@@ -49,7 +49,9 @@ public class Capacity {
 
   public Integer addAndGetWithLimit(int cost, int limit, int previousCount) {
     return delta.getAndAccumulate(
-            cost, (left, right) -> right + left + previousCount > limit ? left : left + right)
+            cost,
+            (left, right)
+                -> right + left + previousCount + total.get() > limit ? left : left + right)
         + total.get();
   }
 
