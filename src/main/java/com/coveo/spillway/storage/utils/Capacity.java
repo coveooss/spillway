@@ -48,6 +48,16 @@ public class Capacity {
   }
 
   public Integer addAndGetWithLimit(int cost, int limit, int previousCount) {
+    // Here we read the current value, increment it after.
+    // To explain the operation here, we have three input parameters here:
+    // cost = the amount of cost we increment the counter with. Usually for API usage counter, this is 1
+    // limit = the limit enforced by the Spillway limit.
+    // previousCount = previous count represent {the value read from previous window} * {time percentage of the previous window)
+    // Here, we left value  = current value, right = cost
+    // cost represents the fix value when we do batch updates. Once we sync the distributed counter, we assign that value to the cost and
+    // set the current value to current - cost. See: CacheSynchronization::applyOnEachEntry
+    // if current + cost + total + previous count > limit => current => current, else current => current + cost
+    // getAndAccumulate returns the current value in this case and modify the value after. It's as the post-increment operator.
     return delta.getAndAccumulate(
             cost,
             (left, right)

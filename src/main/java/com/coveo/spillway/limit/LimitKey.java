@@ -146,8 +146,6 @@ public class LimitKey {
         + ", bucket="
         + bucket
         + '\''
-        + ", previous bucket="
-        + '\''
         + ", expiration="
         + expiration
         + '}';
