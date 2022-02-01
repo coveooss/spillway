@@ -27,7 +27,7 @@ All external storage can be (and should be) wrapped in our asynchronous storage 
 ```
 
 #### Documentation
-The java documentation is available here: https://coveo.github.io/spillway/
+The java documentation is available here: https://coveooss.github.io/spillway/
 
 #### Usage
 ###### Sample 1
