@@ -22,7 +22,6 @@
  */
 package com.coveo.spillway.storage;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -92,7 +91,6 @@ public class RedisStorage implements LimitUsageStorage {
       try (Pipeline pipeline = jedis.pipelined()) {
 
         for (AddAndGetRequest request : requests) {
-          pipeline.multi();
           LimitKey limitKey = LimitKey.fromRequest(request);
           String redisKey =
               Stream.of(
@@ -108,12 +106,11 @@ public class RedisStorage implements LimitUsageStorage {
           responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
           // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
           // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-          pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
-          pipeline.exec();
+          pipeline.expire(redisKey, request.getExpiration().getSeconds() * 2);
         }
 
         pipeline.sync();
-      } catch (IOException e) {
+      } catch (Throwable e) {
         logger.error("Unable to close redis storage pipeline.", e);
       }
     }
@@ -126,13 +123,12 @@ public class RedisStorage implements LimitUsageStorage {
 
   @Override
   public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
-    Map<LimitKey, Response<String>> responses = new LinkedHashMap<>();
+    Map<LimitKey, Response<Object>> responses = new LinkedHashMap<>();
 
     try (Jedis jedis = jedisPool.getResource()) {
       try (Pipeline pipeline = jedis.pipelined()) {
         requests.forEach(
             request -> {
-              pipeline.multi();
               LimitKey limitKey = LimitKey.fromRequest(request);
               String redisKey =
                   Stream.of(
@@ -152,11 +148,11 @@ public class RedisStorage implements LimitUsageStorage {
                       Collections.singletonList(redisKey),
                       Arrays.asList(
                           String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
-              pipeline.expire(redisKey, (int) request.getExpiration().getSeconds() * 2);
-              pipeline.exec();
+              pipeline.expire(redisKey, request.getExpiration().getSeconds() * 2);
             });
+
         pipeline.sync();
-      } catch (IOException e) {
+      } catch (Throwable e) {
         logger.error("Unable to close redis storage pipeline.", e);
       }
     }
@@ -165,7 +161,8 @@ public class RedisStorage implements LimitUsageStorage {
         .entrySet()
         .stream()
         .collect(
-            Collectors.toMap(Map.Entry::getKey, kvp -> Integer.parseInt(kvp.getValue().get())));
+            Collectors.toMap(
+                Map.Entry::getKey, kvp -> Integer.parseInt(kvp.getValue().get().toString())));
   }
 
   @Override
