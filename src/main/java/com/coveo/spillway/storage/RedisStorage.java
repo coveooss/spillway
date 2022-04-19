@@ -45,6 +45,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 
 /**
  * Implementation of {@link LimitUsageStorage} using a Redis storage.
@@ -91,6 +92,7 @@ public class RedisStorage implements LimitUsageStorage {
       try (Pipeline pipeline = jedis.pipelined()) {
 
         for (AddAndGetRequest request : requests) {
+          Transaction transaction = jedis.multi();
           LimitKey limitKey = LimitKey.fromRequest(request);
           String redisKey =
               Stream.of(
@@ -103,10 +105,11 @@ public class RedisStorage implements LimitUsageStorage {
                   .map(RedisStorage::clean)
                   .collect(Collectors.joining(KEY_SEPARATOR));
 
-          responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
+          responses.put(limitKey, transaction.incrBy(redisKey, request.getCost()));
           // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
           // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-          pipeline.expire(redisKey, request.getExpiration().getSeconds() * 2);
+          transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
+          transaction.exec();
         }
 
         pipeline.sync();
@@ -127,6 +130,8 @@ public class RedisStorage implements LimitUsageStorage {
 
     try (Jedis jedis = jedisPool.getResource()) {
       try (Pipeline pipeline = jedis.pipelined()) {
+        Transaction transaction = jedis.multi();
+
         requests.forEach(
             request -> {
               LimitKey limitKey = LimitKey.fromRequest(request);
@@ -143,12 +148,13 @@ public class RedisStorage implements LimitUsageStorage {
 
               responses.put(
                   limitKey,
-                  pipeline.eval(
+                  transaction.eval(
                       COUNTER_SCRIPT,
                       Collections.singletonList(redisKey),
                       Arrays.asList(
                           String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
-              pipeline.expire(redisKey, request.getExpiration().getSeconds() * 2);
+              transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
+              transaction.exec();
             });
 
         pipeline.sync();
