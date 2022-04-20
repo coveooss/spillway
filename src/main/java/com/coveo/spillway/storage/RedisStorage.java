@@ -114,7 +114,7 @@ public class RedisStorage implements LimitUsageStorage {
 
         pipeline.sync();
       } catch (Throwable e) {
-        logger.error("Unable to close redis storage pipeline.", e);
+        logger.error("An exception occured while publishing limits to Redis.", e);
       }
     }
 
@@ -159,7 +159,7 @@ public class RedisStorage implements LimitUsageStorage {
 
         pipeline.sync();
       } catch (Throwable e) {
-        logger.error("Unable to close redis storage pipeline.", e);
+        logger.error("An exception occured while publishing limits to Redis.", e);
       }
     }
 
