@@ -1,7 +1,6 @@
 package com.coveo.spillway.storage.utils;
 
 import static com.google.common.truth.Truth.*;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Duration;
@@ -12,20 +11,20 @@ import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.LimitUsageStorage;
 import com.google.common.collect.ImmutableMap;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class CacheSynchronizationTest {
   private static final String RESOURCE = "TheResource";
   private static final String LIMIT = "TheLimit";
@@ -42,7 +41,7 @@ public class CacheSynchronizationTest {
 
   private CacheSynchronization cacheSynchronization;
 
-  @Before
+  @BeforeEach
   public void setup() {
     cacheSynchronization = new CacheSynchronization(inMemoryStorageMock, limitUsageStorageMock);
   }
@@ -93,8 +92,7 @@ public class CacheSynchronizationTest {
   private void givenInMemoryCacheHasValues(Map<LimitKey, Integer> counters) {
     doAnswer(
             invocation -> {
-              Consumer<Entry<LimitKey, Capacity>> consumer =
-                  (Consumer<Entry<LimitKey, Capacity>>) invocation.getArgumentAt(0, Consumer.class);
+              Consumer<Entry<LimitKey, Capacity>> consumer = invocation.getArgument(0);
 
               for (Entry<LimitKey, Capacity> entry :
                   counters

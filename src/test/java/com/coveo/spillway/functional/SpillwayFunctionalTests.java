@@ -14,11 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,14 +27,13 @@ import com.coveo.spillway.storage.AsyncBatchLimitUsageStorage;
 import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.InMemoryStorage;
 import com.coveo.spillway.storage.RedisStorage;
-import com.coveo.spillway.storage.RedisStorageTest;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
 
 import redis.clients.jedis.JedisPool;
 import redis.embedded.RedisServer;
 
-@Ignore("Functional tests, remove ignore to run them")
+@Disabled("Functional tests, remove ignore to run them")
 public class SpillwayFunctionalTests {
 
   private static final String RESOURCE1 = "someResource";
@@ -59,8 +54,7 @@ public class SpillwayFunctionalTests {
   private static JedisPool jedis;
   private static RedisStorage storage;
 
-  @SuppressWarnings("resource")
-  @BeforeClass
+  @BeforeAll
   public static void startRedis() throws IOException {
     try {
       redisServer = new RedisServer(6389);
@@ -73,12 +67,12 @@ public class SpillwayFunctionalTests {
     storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", 6389)).build();
   }
 
-  @AfterClass
-  public static void stopRedis() {
+  @AfterAll
+  public static void stopRedis() throws IOException {
     redisServer.stop();
   }
 
-  @Before
+  @BeforeEach
   public void setup() {
     jedis.getResource().flushDB();
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
@@ -106,7 +100,7 @@ public class SpillwayFunctionalTests {
     threadPool.shutdown();
     threadPool.awaitTermination(1, TimeUnit.MINUTES);
 
-    assertThat(counter.get()).isIn(inErrorMargin(ONE_MILLION, MARGIN_OF_ERROR));
+    assertThat(counter.get()).isIn(inErrorMargin(MARGIN_OF_ERROR));
   }
 
   @Test
@@ -240,26 +234,16 @@ public class SpillwayFunctionalTests {
     Map<LimitKey, Integer> currentCounters = asyncStorage.getCurrentLimitCounters();
     Map<LimitKey, Integer> cacheCounters = asyncStorage.debugCacheLimitCounters();
 
-    currentCounters
-        .entrySet()
-        .forEach(
-            entry -> {
-              assertThat(entry.getValue()).isEqualTo(numberOfCalls);
-            });
+    currentCounters.forEach((key, value) -> assertThat(value).isEqualTo(numberOfCalls));
 
-    cacheCounters
-        .entrySet()
-        .forEach(
-            entry -> {
-              assertThat(entry.getValue()).isEqualTo(2 * numberOfCalls);
-            });
+    cacheCounters.forEach((key, value) -> assertThat(value).isEqualTo(2 * numberOfCalls));
   }
 
-  private Range<Integer> inErrorMargin(Integer expectedValue, double marginOfError) {
+  private Range<Integer> inErrorMargin(double marginOfError) {
     marginOfError += 1;
 
-    Integer lowerBound = (int) (expectedValue / marginOfError);
-    Integer upperBound = (int) (expectedValue * marginOfError);
+    Integer lowerBound = (int) (SpillwayFunctionalTests.ONE_MILLION / marginOfError);
+    Integer upperBound = (int) (SpillwayFunctionalTests.ONE_MILLION * marginOfError);
 
     return Range.closed(lowerBound, upperBound);
   }

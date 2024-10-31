@@ -22,12 +22,9 @@
  */
 package com.coveo.spillway.trigger;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.coveo.spillway.limit.LimitDefinition;
-import com.coveo.spillway.trigger.LimitTriggerCallback;
-import com.coveo.spillway.trigger.ValueThresholdTrigger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
@@ -35,13 +32,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class ValueThresholdTriggerTest {
-  private LimitTriggerCallback callback;
-  private LimitDefinition limitDef = new LimitDefinition("testLimit", 100, Duration.ofDays(1));
+  private final LimitDefinition limitDef =
+      new LimitDefinition("testLimit", 100, Duration.ofDays(1));
   private ValueThresholdTrigger trigger;
 
-  @Before
+  @BeforeEach
   public void setup() {
-    callback = mock(LimitTriggerCallback.class);
+    LimitTriggerCallback callback = mock(LimitTriggerCallback.class);
     // Will trigger at 50% of the limit
     trigger = new ValueThresholdTrigger(50, callback);
   }

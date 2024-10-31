@@ -114,7 +114,7 @@ public class RedisStorage implements LimitUsageStorage {
 
         pipeline.sync();
       } catch (Throwable e) {
-        logger.error("An exception occured while publishing limits to Redis.", e);
+        logger.error("An exception occurred while publishing limits to Redis.", e);
       }
     }
 
