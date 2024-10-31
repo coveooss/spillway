@@ -22,9 +22,8 @@
  */
 package com.coveo.spillway.limit;
 
-import org.junit.Test;
-
 import com.coveo.spillway.limit.LimitDefinition;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 

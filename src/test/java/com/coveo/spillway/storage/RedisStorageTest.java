@@ -29,13 +29,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.coveo.spillway.limit.LimitKey;
@@ -50,6 +45,7 @@ import redis.embedded.RedisServer;
  * The behavior of the RedisStorage class is tightly coupled with the behavior
  * of redis so it makes sense imho.
  */
+//@Disabled("Functional tests, remove ignore to run them")
 public class RedisStorageTest {
 
   private static final String RESOURCE1 = "someResource";
@@ -63,6 +59,7 @@ public class RedisStorageTest {
   private static final String KEY3 = "yetAnotherKey";
   private static final Duration EXPIRATION = Duration.ofHours(1);
   private static final Instant TIMESTAMP = Instant.now();
+  private static final int REDIS_PORT = 7893;
 
   private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
 
@@ -70,26 +67,25 @@ public class RedisStorageTest {
   private static JedisPool jedis;
   private static RedisStorage storage;
 
-  @SuppressWarnings("resource")
-  @BeforeClass
+  @BeforeAll
   public static void startRedis() throws IOException {
     try {
-      redisServer = new RedisServer(6389);
+      redisServer = new RedisServer(REDIS_PORT);
     } catch (IOException e) {
-      logger.error("Failed to start Redis server. Is port 6389 available?");
+      logger.error("Failed to start Redis server. Is port {} available?", REDIS_PORT);
       throw e;
     }
     redisServer.start();
-    jedis = new JedisPool("localhost", 6389);
-    storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", 6389)).build();
+    jedis = new JedisPool("localhost", REDIS_PORT);
+    storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", REDIS_PORT)).build();
   }
 
-  @AfterClass
-  public static void stopRedis() {
+  @AfterAll
+  public static void stopRedis() throws IOException {
     redisServer.stop();
   }
 
-  @Before
+  @BeforeEach
   public void flushDataInRedis() {
     try (Jedis resource = jedis.getResource()) {
       resource.flushDB();
@@ -197,7 +193,7 @@ public class RedisStorageTest {
   }
 
   @Test
-  public void canAddLargeValuesToExisitingCounters() {
+  public void canAddLargeValuesToExistingCounters() {
     storage.incrementAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP);
     int result =
         storage.addAndGet(RESOURCE1, LIMIT1, PROPERTY1, true, EXPIRATION, TIMESTAMP, 5).getValue();
@@ -210,8 +206,13 @@ public class RedisStorageTest {
     // Versions pre 2.0.0-alpha.3 are not storing expiration
     try (Jedis resource = jedis.getResource()) {
       resource.set(
-          Stream.of(RedisStorage.DEFAULT_PREFIX, RESOURCE1, LIMIT1, PROPERTY1, TIMESTAMP.toString())
-              .collect(Collectors.joining(RedisStorage.KEY_SEPARATOR)),
+          String.join(
+              RedisStorage.KEY_SEPARATOR,
+              RedisStorage.DEFAULT_PREFIX,
+              RESOURCE1,
+              LIMIT1,
+              PROPERTY1,
+              TIMESTAMP.toString()),
           "1");
     }
 

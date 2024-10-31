@@ -23,12 +23,12 @@
 package com.coveo.spillway.storage;
 
 import com.coveo.spillway.limit.LimitKey;
-import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.google.common.collect.ImmutableMap;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +36,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.anyCollectionOf;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 public class AsyncLimitUsageStorageTest {
@@ -53,8 +52,7 @@ public class AsyncLimitUsageStorageTest {
   private static final int MOCKED_STORAGE_SLEEP = 100;
 
   private AsyncLimitUsageStorage asyncStorage;
-  private LimitUsageStorage mockedStorage;
-  private AddAndGetRequest request =
+  private final AddAndGetRequest request =
       new AddAndGetRequest.Builder()
           .withResource(RESOURCE)
           .withProperty(PROPERTY)
@@ -65,10 +63,10 @@ public class AsyncLimitUsageStorageTest {
           .withExpiration(EXPIRATION)
           .build();
 
-  @Before
+  @BeforeEach
   public void setup() {
-    mockedStorage = mock(LimitUsageStorage.class);
-    when(mockedStorage.addAndGet(anyCollectionOf(AddAndGetRequest.class)))
+    LimitUsageStorage mockedStorage = Mockito.mock(LimitUsageStorage.class);
+    when(mockedStorage.addAndGet(anyCollection()))
         .then(
             invocation -> {
               Thread.sleep(MOCKED_STORAGE_SLEEP);

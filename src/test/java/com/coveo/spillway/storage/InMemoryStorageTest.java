@@ -22,14 +22,14 @@
  */
 package com.coveo.spillway.storage;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import com.coveo.spillway.limit.LimitKey;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -39,7 +39,7 @@ import java.util.Map;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class InMemoryStorageTest {
 
   private static final String RESOURCE1 = "someResource";
@@ -55,7 +55,7 @@ public class InMemoryStorageTest {
 
   @InjectMocks private InMemoryStorage storage;
 
-  @Before
+  @BeforeEach
   public void setup() {
     when(clock.instant()).thenReturn(Instant.now());
   }

@@ -1,7 +1,6 @@
 package com.coveo.spillway.storage;
 
 import static com.google.common.truth.Truth.*;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Duration;
@@ -14,21 +13,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.coveo.spillway.storage.utils.CacheSynchronization;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class AsyncBatchLimitUsageStorageTest {
   private static final String RESOURCE = "TheResource";
   private static final String PROPERTY = "TheProperty";
@@ -47,19 +46,19 @@ public class AsyncBatchLimitUsageStorageTest {
 
   private AsyncBatchLimitUsageStorage asyncBatchLimitUsageStorage;
 
-  @Before
+  @BeforeEach
   public void setup() {
     cacheSpy = Mockito.spy(new InMemoryStorage());
     cacheSynchronizationSpy = Mockito.spy(new CacheSynchronization(cacheSpy, storageMock));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     asyncBatchLimitUsageStorage.close();
   }
 
   @Test
-  public void testAddWithCacheForcefullyInitialized() throws Exception {
+  public void testAddWithCacheForcefullyInitialized() {
     asyncBatchLimitUsageStorage =
         new AsyncBatchLimitUsageStorage(
             storageMock,
@@ -88,7 +87,7 @@ public class AsyncBatchLimitUsageStorageTest {
   }
 
   @Test
-  public void testAddWithCacheNotForcefullyInitialized() throws Exception {
+  public void testAddWithCacheNotForcefullyInitialized() {
     asyncBatchLimitUsageStorage =
         new AsyncBatchLimitUsageStorage(
             storageMock,
@@ -125,8 +124,7 @@ public class AsyncBatchLimitUsageStorageTest {
         .then(
             invocation -> {
               Thread.sleep(MOCKED_STORAGE_SLEEP);
-              return ImmutablePair.of(
-                  LimitKey.fromRequest(invocation.getArgumentAt(0, AddAndGetRequest.class)), 100);
+              return ImmutablePair.of(LimitKey.fromRequest(invocation.getArgument(0)), 100);
             });
 
     asyncBatchLimitUsageStorage =
