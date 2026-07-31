@@ -8,8 +8,7 @@
     <version>3.0.0</version>
     <packaging>jar</packaging>
 
-    <name>${project.artifactId}</name>
-
+    <name>Spillway</name>
     <description>Simple, flexible, distributable rate limiting for your application</description>
     <url>https://github.com/coveooss/spillway</url>
 
@@ -61,19 +60,41 @@
 
         <maven.compiler.release>17</maven.compiler.release>
 
-        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <maven.compiler.proc>full</maven.compiler.proc>
+
+        <maven.compiler.parameters>true</maven.compiler.parameters>
+
+        <maven.compiler.debuglevel>lines,vars,source</maven.compiler.debuglevel>
+
+        <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
+
+        <surefire.useSystemClassLoader>false</surefire.useSystemClassLoader>
+
+        <commons-lang3.version>3.20.0</commons-lang3.version>
 
         <jedis.version>5.0.2</jedis.version>
 
-        <mockito.version>5.14.2</mockito.version>
+        <mockito.version>5.23.0</mockito.version>
 
-        <junit.version>5.11.3</junit.version>
+        <junit.version>5.14.4</junit.version>
 
-        <slf4j.version>2.0.12</slf4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
 
-        <truth.version>1.4.4</truth.version>
+        <truth.version>1.4.5</truth.version>
 
         <embedded-redis.version>1.4.3</embedded-redis.version>
+
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+
+        <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -158,26 +179,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <proc>full</proc>
-                    <parameters>true</parameters>
-                    <debuglevel>lines,vars,source</debuglevel>
-                    <useIncrementalCompilation>false</useIncrementalCompilation>
-                </configuration>
+                <version>${maven-compiler-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <useSystemClassLoader>false</useSystemClassLoader>
-                </configuration>
+                <version>${maven-surefire-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>${maven-source-plugin.version}</version>
                 <configuration>
                 </configuration>
                 <executions>
@@ -239,7 +251,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.10.1</version>
+                        <version>${maven-javadoc-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -252,7 +264,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <version>${nexus-staging-maven-plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
@@ -263,7 +275,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.7</version>
+                        <version>${maven-gpg-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

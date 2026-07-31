@@ -1,7 +1,5 @@
 # Spillway
-[![Build Status](https://travis-ci.org/coveo/spillway.svg?branch=master)](https://travis-ci.org/coveo/spillway)
 [![license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/coveo/spillway/blob/master/LICENSE)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.coveo/spillway/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.coveo/spillway)
 
 ## A distributed throttling solution
 
@@ -25,9 +23,6 @@ All external storage can be (and should be) wrapped in our asynchronous storage 
     <version>3.0.0</version>
 </dependency>
 ```
-
-#### Documentation
-The java documentation is available here: https://coveooss.github.io/spillway/
 
 #### Usage
 ###### Sample 1
