@@ -1,6 +1,6 @@
 package com.coveo.spillway.functional;
 
-import static com.google.common.truth.Truth.*;
+import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -11,12 +11,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import java.util.stream.IntStream;
+
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.coveo.spillway.Spillway;
 import com.coveo.spillway.SpillwayFactory;
@@ -26,14 +31,15 @@ import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.AsyncBatchLimitUsageStorage;
 import com.coveo.spillway.storage.AsyncLimitUsageStorage;
 import com.coveo.spillway.storage.InMemoryStorage;
+import com.coveo.spillway.storage.RedisContainer;
 import com.coveo.spillway.storage.RedisStorage;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
 
-import redis.clients.jedis.JedisPool;
-import redis.embedded.RedisServer;
+import redis.clients.jedis.RedisClient;
 
 @Disabled("Functional tests, remove ignore to run them")
+@Testcontainers
 public class SpillwayFunctionalTests {
 
   private static final String RESOURCE1 = "someResource";
@@ -50,31 +56,21 @@ public class SpillwayFunctionalTests {
 
   private static final Logger logger = LoggerFactory.getLogger(SpillwayFunctionalTests.class);
 
-  private static RedisServer redisServer;
-  private static JedisPool jedis;
+  @Container private static RedisContainer<?> redisContainer = new RedisContainer<>();
+  private static RedisClient redisClient;
   private static RedisStorage storage;
 
   @BeforeAll
   public static void startRedis() throws IOException {
-    try {
-      redisServer = new RedisServer(6389);
-    } catch (IOException e) {
-      logger.error("Failed to start Redis server. Is port 6389 available?");
-      throw e;
-    }
-    redisServer.start();
-    jedis = new JedisPool("localhost", 6389);
-    storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", 6389)).build();
-  }
-
-  @AfterAll
-  public static void stopRedis() throws IOException {
-    redisServer.stop();
+    redisClient = RedisClient.create(redisContainer.getHost(), redisContainer.getMappedRedisPort());
+    storage =
+        new RedisStorage(
+            RedisClient.create(redisContainer.getHost(), redisContainer.getMappedRedisPort()));
   }
 
   @BeforeEach
   public void setup() {
-    jedis.getResource().flushDB();
+    redisClient.flushDB();
     inMemoryFactory = new SpillwayFactory(new InMemoryStorage());
   }
 
@@ -131,7 +127,7 @@ public class SpillwayFunctionalTests {
         IntStream.range(0, numberOfRuns)
             .mapToLong(
                 j -> {
-                  jedis.getResource().flushDB();
+                  redisClient.flushDB();
                   Stopwatch stopwatch = Stopwatch.createStarted();
                   for (int i = 0; i < numberOfCalls; i++) {
                     spillway1.tryUpdateAndVerifyLimit("testResource");
@@ -149,8 +145,8 @@ public class SpillwayFunctionalTests {
         avgTime,
         rate);
 
-    jedis.getResource().close();
-    jedis = new JedisPool("localhost", 6389);
+    redisClient.close();
+    redisClient = RedisClient.create("localhost", 6389);
     ipLimit = LimitBuilder.of("perIp").to(numberOfCalls).per(Duration.ofHours(1)).build();
     redisFactory = new SpillwayFactory(storage);
     Spillway<String> spillway2 = redisFactory.enforce("testResource", ipLimit);
@@ -158,7 +154,7 @@ public class SpillwayFunctionalTests {
         IntStream.range(0, numberOfRuns)
             .mapToLong(
                 j -> {
-                  jedis.getResource().flushDB();
+                  redisClient.flushDB();
                   Stopwatch stopwatch = Stopwatch.createStarted();
                   for (int i = 0; i < numberOfCalls; i++) {
                     spillway2.tryCall("testResource");

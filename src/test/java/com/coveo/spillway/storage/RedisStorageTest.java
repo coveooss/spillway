@@ -22,23 +22,26 @@
  */
 package com.coveo.spillway.storage;
 
-import static com.google.common.truth.Truth.*;
-import static org.mockito.Mockito.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
-import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
 import com.coveo.spillway.limit.LimitKey;
 import com.google.common.collect.Sets;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.embedded.RedisServer;
+import redis.clients.jedis.RedisClient;
 
 /**
  * These are slightly functional tests in the sense that they do not mock Redis.
@@ -46,8 +49,8 @@ import redis.embedded.RedisServer;
  * of redis so it makes sense imho.
  */
 //@Disabled("Functional tests, remove ignore to run them")
+@Testcontainers
 public class RedisStorageTest {
-
   private static final String RESOURCE1 = "someResource";
   private static final String RESOURCE2 = "someOtherResource";
   private static final String LIMIT1 = "someLimit";
@@ -59,37 +62,22 @@ public class RedisStorageTest {
   private static final String KEY3 = "yetAnotherKey";
   private static final Duration EXPIRATION = Duration.ofHours(1);
   private static final Instant TIMESTAMP = Instant.now();
-  private static final int REDIS_PORT = 7893;
 
-  private static final Logger logger = LoggerFactory.getLogger(RedisStorageTest.class);
-
-  private static RedisServer redisServer;
-  private static JedisPool jedis;
+  @Container private static RedisContainer<?> redisContainer = new RedisContainer<>();
+  private static RedisClient redisClient;
   private static RedisStorage storage;
 
   @BeforeAll
   public static void startRedis() throws IOException {
-    try {
-      redisServer = new RedisServer(REDIS_PORT);
-    } catch (IOException e) {
-      logger.error("Failed to start Redis server. Is port {} available?", REDIS_PORT);
-      throw e;
-    }
-    redisServer.start();
-    jedis = new JedisPool("localhost", REDIS_PORT);
-    storage = RedisStorage.builder().withJedisPool(new JedisPool("localhost", REDIS_PORT)).build();
-  }
-
-  @AfterAll
-  public static void stopRedis() throws IOException {
-    redisServer.stop();
+    redisClient = RedisClient.create(redisContainer.getHost(), redisContainer.getMappedRedisPort());
+    storage =
+        new RedisStorage(
+            RedisClient.create(redisContainer.getHost(), redisContainer.getMappedRedisPort()));
   }
 
   @BeforeEach
   public void flushDataInRedis() {
-    try (Jedis resource = jedis.getResource()) {
-      resource.flushDB();
-    }
+    redisClient.flushDB();
   }
 
   @Test
@@ -204,17 +192,15 @@ public class RedisStorageTest {
   @Test
   public void testBackwardCompatibilityWithPreviousKeys() {
     // Versions pre 2.0.0-alpha.3 are not storing expiration
-    try (Jedis resource = jedis.getResource()) {
-      resource.set(
-          String.join(
-              RedisStorage.KEY_SEPARATOR,
-              RedisStorage.DEFAULT_PREFIX,
-              RESOURCE1,
-              LIMIT1,
-              PROPERTY1,
-              TIMESTAMP.toString()),
-          "1");
-    }
+    redisClient.set(
+        String.join(
+            RedisStorage.KEY_SEPARATOR,
+            RedisStorage.DEFAULT_PREFIX,
+            RESOURCE1,
+            LIMIT1,
+            PROPERTY1,
+            TIMESTAMP.toString()),
+        "1");
 
     Map<LimitKey, Integer> limitCounters = storage.getCurrentLimitCounters();
     assertThat(limitCounters).hasSize(1);
@@ -222,14 +208,12 @@ public class RedisStorageTest {
 
   @Test
   public void nullAndEmptyValueDoNotCauseExceptionWhenGettingLimits() {
-    Jedis jedisMock = mock(Jedis.class);
-    when(jedisMock.keys(anyString())).thenReturn(Sets.newHashSet(KEY1, KEY2, KEY3));
-    when(jedisMock.get(KEY1)).thenReturn("12");
-    when(jedisMock.get(KEY2)).thenReturn(null);
-    when(jedisMock.get(KEY3)).thenReturn("");
-    JedisPool jedisPool = mock(JedisPool.class);
-    when(jedisPool.getResource()).thenReturn(jedisMock);
-    RedisStorage redisStorage = RedisStorage.builder().withJedisPool(jedisPool).build();
+    RedisClient redisClientMock = mock(RedisClient.class);
+    when(redisClientMock.keys(anyString())).thenReturn(Sets.newHashSet(KEY1, KEY2, KEY3));
+    when(redisClientMock.get(KEY1)).thenReturn("12");
+    when(redisClientMock.get(KEY2)).thenReturn(null);
+    when(redisClientMock.get(KEY3)).thenReturn("");
+    RedisStorage redisStorage = new RedisStorage(redisClientMock);
 
     Map<LimitKey, Integer> counters = redisStorage.getCurrentLimitCounters();
 

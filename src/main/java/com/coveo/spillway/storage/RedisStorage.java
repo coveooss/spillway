@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,11 +42,11 @@ import org.slf4j.LoggerFactory;
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 
+import redis.clients.jedis.AbstractTransaction;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
 
 /**
  * Implementation of {@link LimitUsageStorage} using a Redis storage.
@@ -76,23 +77,30 @@ public class RedisStorage implements LimitUsageStorage {
           + "end "
           + "return tostring(counter)";
 
-  private final JedisPool jedisPool;
+  private final RedisClient redisClient;
   private final String keyPrefix;
 
-  RedisStorage(Builder builder) {
-    this.jedisPool = builder.jedisPool;
-    this.keyPrefix = builder.keyPrefix;
+  public RedisStorage(RedisClient redisClient) {
+    this(redisClient, DEFAULT_PREFIX);
+  }
+
+  public RedisStorage(RedisClient redisClient, String keyPrefix) {
+    this.redisClient = Objects.requireNonNull(redisClient);
+    if (StringUtils.isBlank(keyPrefix)) {
+      throw new IllegalArgumentException("keyPrefix must not be blank.");
+    }
+    this.keyPrefix = keyPrefix;
   }
 
   @Override
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Response<Long>> responses = new LinkedHashMap<>();
 
-    try (Jedis jedis = jedisPool.getResource()) {
-      try (Pipeline pipeline = jedis.pipelined()) {
-
-        for (AddAndGetRequest request : requests) {
-          Transaction transaction = jedis.multi();
+    // Mixing pipelining + TXes wasn't possible anymore with the Jedis 7 API.
+    // Preserving TX as a tradeoff.
+    try {
+      for (AddAndGetRequest request : requests) {
+        try (AbstractTransaction transaction = redisClient.multi()) {
           LimitKey limitKey = LimitKey.fromRequest(request);
           String redisKey =
               Stream.of(
@@ -111,11 +119,9 @@ public class RedisStorage implements LimitUsageStorage {
           transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
           transaction.exec();
         }
-
-        pipeline.sync();
-      } catch (Throwable e) {
-        logger.error("An exception occurred while publishing limits to Redis.", e);
       }
+    } catch (Throwable e) {
+      logger.error("An exception occurred while publishing limits to Redis.", e);
     }
 
     return responses
@@ -128,39 +134,37 @@ public class RedisStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Response<Object>> responses = new LinkedHashMap<>();
 
-    try (Jedis jedis = jedisPool.getResource()) {
-      try (Pipeline pipeline = jedis.pipelined()) {
-        Transaction transaction = jedis.multi();
+    try (Pipeline pipeline = redisClient.pipelined()) {
+      AbstractTransaction transaction = redisClient.multi();
 
-        requests.forEach(
-            request -> {
-              LimitKey limitKey = LimitKey.fromRequest(request);
-              String redisKey =
-                  Stream.of(
-                          keyPrefix,
-                          limitKey.getResource(),
-                          limitKey.getLimitName(),
-                          limitKey.getProperty(),
-                          limitKey.getBucket().toString(),
-                          limitKey.getExpiration().toString())
-                      .map(RedisStorage::clean)
-                      .collect(Collectors.joining(KEY_SEPARATOR));
+      requests.forEach(
+          request -> {
+            LimitKey limitKey = LimitKey.fromRequest(request);
+            String redisKey =
+                Stream.of(
+                        keyPrefix,
+                        limitKey.getResource(),
+                        limitKey.getLimitName(),
+                        limitKey.getProperty(),
+                        limitKey.getBucket().toString(),
+                        limitKey.getExpiration().toString())
+                    .map(RedisStorage::clean)
+                    .collect(Collectors.joining(KEY_SEPARATOR));
 
-              responses.put(
-                  limitKey,
-                  transaction.eval(
-                      COUNTER_SCRIPT,
-                      Collections.singletonList(redisKey),
-                      Arrays.asList(
-                          String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
-              transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
-              transaction.exec();
-            });
+            responses.put(
+                limitKey,
+                transaction.eval(
+                    COUNTER_SCRIPT,
+                    Collections.singletonList(redisKey),
+                    Arrays.asList(
+                        String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
+            transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
+            transaction.exec();
+          });
 
-        pipeline.sync();
-      } catch (Throwable e) {
-        logger.error("An exception occured while publishing limits to Redis.", e);
-      }
+      pipeline.sync();
+    } catch (Throwable e) {
+      logger.error("An exception occured while publishing limits to Redis.", e);
     }
 
     return responses
@@ -195,30 +199,28 @@ public class RedisStorage implements LimitUsageStorage {
   private Map<LimitKey, Integer> getLimits(String keyPattern) {
     Map<LimitKey, Integer> counters = new HashMap<>();
 
-    try (Jedis jedis = jedisPool.getResource()) {
-      Set<String> keys = jedis.keys(keyPattern);
-      for (String key : keys) {
-        String valueAsString = jedis.get(key);
-        if (StringUtils.isNotEmpty(valueAsString)) {
-          int value = Integer.parseInt(valueAsString);
+    Set<String> keys = redisClient.keys(keyPattern);
+    for (String key : keys) {
+      String valueAsString = redisClient.get(key);
+      if (StringUtils.isNotEmpty(valueAsString)) {
+        int value = Integer.parseInt(valueAsString);
 
-          String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
+        String[] keyComponents = StringUtils.split(key, KEY_SEPARATOR);
 
-          counters.put(
-              new LimitKey(
-                  keyComponents[1],
-                  keyComponents[2],
-                  keyComponents[3],
-                  true,
-                  Instant.parse(keyComponents[4]),
-                  keyComponents.length == 6
-                      ? Duration.parse(keyComponents[5])
-                      : Duration
-                          .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
-              value);
-        } else {
-          logger.info("Key '{}' has no value and will not be included in counters", key);
-        }
+        counters.put(
+            new LimitKey(
+                keyComponents[1],
+                keyComponents[2],
+                keyComponents[3],
+                true,
+                Instant.parse(keyComponents[4]),
+                keyComponents.length == 6
+                    ? Duration.parse(keyComponents[5])
+                    : Duration
+                        .ZERO), // Version pre alpha.3 are not storing the expiration within the key so we fallback to 0
+            value);
+      } else {
+        logger.info("Key '{}' has no value and will not be included in counters", key);
       }
     }
     return Collections.unmodifiableMap(counters);
@@ -226,7 +228,7 @@ public class RedisStorage implements LimitUsageStorage {
 
   @Override
   public void close() {
-    jedisPool.destroy();
+    redisClient.close();
   }
 
   private String buildKeyPattern(String... keyComponents) {
@@ -236,42 +238,7 @@ public class RedisStorage implements LimitUsageStorage {
         .collect(Collectors.joining(KEY_SEPARATOR));
   }
 
-  private static final String clean(String keyComponent) {
+  private static String clean(String keyComponent) {
     return keyComponent.replace(KEY_SEPARATOR, KEY_SEPARATOR_SUBSTITUTE);
-  }
-
-  public static final Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-    JedisPool jedisPool;
-    String keyPrefix;
-
-    private Builder() {
-      this.keyPrefix = RedisStorage.DEFAULT_PREFIX;
-    }
-
-    public void setJedisPool(JedisPool jedisPool) {
-      this.jedisPool = jedisPool;
-    }
-
-    public Builder withJedisPool(JedisPool jedisPool) {
-      setJedisPool(jedisPool);
-      return this;
-    }
-
-    public void setKeyPrefix(String keyPrefix) {
-      this.keyPrefix = keyPrefix;
-    }
-
-    public Builder withKeyPrefix(String keyPrefix) {
-      setKeyPrefix(keyPrefix);
-      return this;
-    }
-
-    public RedisStorage build() {
-      return new RedisStorage(this);
-    }
   }
 }
