@@ -22,7 +22,7 @@ All external storage can be (and should be) wrapped in our asynchronous storage 
 <dependency>
     <groupId>com.coveo</groupId>
     <artifactId>spillway</artifactId>
-    <version>2.0.0</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
