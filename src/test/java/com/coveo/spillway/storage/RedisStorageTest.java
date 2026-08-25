@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -39,9 +40,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.coveo.spillway.limit.LimitKey;
+import com.coveo.spillway.storage.utils.AddAndGetRequest;
 import com.google.common.collect.Sets;
 
 import redis.clients.jedis.RedisClient;
+import redis.clients.jedis.UnifiedJedis;
 
 /**
  * These are slightly functional tests in the sense that they do not mock Redis.
@@ -57,6 +60,7 @@ public class RedisStorageTest {
   private static final String LIMIT2 = "someOtherLimit";
   private static final String PROPERTY1 = "someProperty";
   private static final String PROPERTY2 = "someOtherProperty";
+  private static final String PROPERTY3 = "yetAnotherProperty";
   private static final String KEY1 = "someKey|2|3|4|2007-12-03T10:15:30.00Z";
   private static final String KEY2 = "someOtherKey";
   private static final String KEY3 = "yetAnotherKey";
@@ -207,8 +211,46 @@ public class RedisStorageTest {
   }
 
   @Test
+  public void canAddAndGetMultipleRequestsInASingleBatch() {
+    Map<LimitKey, Integer> result =
+        storage.addAndGet(
+            Arrays.asList(
+                addAndGetRequest(PROPERTY1, 5, 100),
+                addAndGetRequest(PROPERTY2, 10, 100),
+                addAndGetRequest(PROPERTY3, 15, 100)));
+
+    assertThat(result.values()).containsExactly(5, 10, 15);
+  }
+
+  @Test
+  public void canAddAndGetWithLimitMultipleRequestsInASingleBatch() {
+    Map<LimitKey, Integer> result =
+        storage.addAndGetWithLimit(
+            Arrays.asList(
+                addAndGetRequest(PROPERTY1, 5, 100),
+                addAndGetRequest(PROPERTY2, 10, 100),
+                addAndGetRequest(PROPERTY3, 15, 100)));
+
+    assertThat(result.values()).containsExactly(5, 10, 15);
+  }
+
+  @Test
+  public void addAndGetWithLimitDoesNotIncrementBeyondTheLimitInASingleBatch() {
+    for (int i = 0; i < 3; i++) {
+      storage.addAndGetWithLimit(
+          Arrays.asList(addAndGetRequest(PROPERTY1, 5, 5), addAndGetRequest(PROPERTY2, 5, 5)));
+    }
+
+    Map<LimitKey, Integer> result =
+        storage.addAndGetWithLimit(
+            Arrays.asList(addAndGetRequest(PROPERTY1, 5, 5), addAndGetRequest(PROPERTY2, 5, 5)));
+
+    assertThat(result.values()).containsExactly(10, 10);
+  }
+
+  @Test
   public void nullAndEmptyValueDoNotCauseExceptionWhenGettingLimits() {
-    RedisClient redisClientMock = mock(RedisClient.class);
+    UnifiedJedis redisClientMock = mock(UnifiedJedis.class);
     when(redisClientMock.keys(anyString())).thenReturn(Sets.newHashSet(KEY1, KEY2, KEY3));
     when(redisClientMock.get(KEY1)).thenReturn("12");
     when(redisClientMock.get(KEY2)).thenReturn(null);
@@ -218,5 +260,18 @@ public class RedisStorageTest {
     Map<LimitKey, Integer> counters = redisStorage.getCurrentLimitCounters();
 
     assertThat(counters.values()).containsExactly(12);
+  }
+
+  private static AddAndGetRequest addAndGetRequest(String property, int cost, int limit) {
+    return new AddAndGetRequest.Builder()
+        .withResource(RESOURCE1)
+        .withLimitName(LIMIT1)
+        .withProperty(property)
+        .withDistributed(true)
+        .withExpiration(EXPIRATION)
+        .withEventTimestamp(TIMESTAMP)
+        .withCost(cost)
+        .withLimit(limit)
+        .build();
   }
 }

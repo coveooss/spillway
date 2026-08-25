@@ -146,7 +146,7 @@ public class SpillwayFunctionalTests {
         rate);
 
     redisClient.close();
-    redisClient = RedisClient.create("localhost", 6389);
+    redisClient = RedisClient.create(redisContainer.getHost(), redisContainer.getMappedRedisPort());
     ipLimit = LimitBuilder.of("perIp").to(numberOfCalls).per(Duration.ofHours(1)).build();
     redisFactory = new SpillwayFactory(storage);
     Spillway<String> spillway2 = redisFactory.enforce("testResource", ipLimit);

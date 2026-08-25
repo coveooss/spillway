@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -42,16 +41,15 @@ import org.slf4j.LoggerFactory;
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
 
-import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.RedisClient;
+import redis.clients.jedis.AbstractPipeline;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.UnifiedJedis;
 
 /**
  * Implementation of {@link LimitUsageStorage} using a Redis storage.
  * <p>
- * Uses a {@link Jedis} client to communicate with the database.
+ * Uses a {@link UnifiedJedis} client to communicate with the database, which supports
+ * standalone, sentinel and cluster deployments.
  * It will automatically reconnect to the Redis server in case of connection lost.
  * <p>
  * We suggest to wrap this storage in the {@link AsyncBatchLimitUsageStorage}
@@ -77,14 +75,14 @@ public class RedisStorage implements LimitUsageStorage {
           + "end "
           + "return tostring(counter)";
 
-  private final RedisClient redisClient;
+  private final UnifiedJedis redisClient;
   private final String keyPrefix;
 
-  public RedisStorage(RedisClient redisClient) {
+  public RedisStorage(UnifiedJedis redisClient) {
     this(redisClient, DEFAULT_PREFIX);
   }
 
-  public RedisStorage(RedisClient redisClient, String keyPrefix) {
+  public RedisStorage(UnifiedJedis redisClient, String keyPrefix) {
     this.redisClient = Objects.requireNonNull(redisClient);
     if (StringUtils.isBlank(keyPrefix)) {
       throw new IllegalArgumentException("keyPrefix must not be blank.");
@@ -96,30 +94,20 @@ public class RedisStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> addAndGet(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Response<Long>> responses = new LinkedHashMap<>();
 
-    // Mixing pipelining + TXes wasn't possible anymore with the Jedis 7 API.
-    // Preserving TX as a tradeoff.
-    try {
+    // The bucketing mechanism guarantees that a counter is only ever incremented, so these
+    // commands do not need to be wrapped in a transaction and can all be pipelined together.
+    try (AbstractPipeline pipeline = redisClient.pipelined()) {
       for (AddAndGetRequest request : requests) {
-        try (AbstractTransaction transaction = redisClient.multi()) {
-          LimitKey limitKey = LimitKey.fromRequest(request);
-          String redisKey =
-              Stream.of(
-                      keyPrefix,
-                      limitKey.getResource(),
-                      limitKey.getLimitName(),
-                      limitKey.getProperty(),
-                      limitKey.getBucket().toString(),
-                      limitKey.getExpiration().toString())
-                  .map(RedisStorage::clean)
-                  .collect(Collectors.joining(KEY_SEPARATOR));
+        LimitKey limitKey = LimitKey.fromRequest(request);
+        String redisKey = buildKey(limitKey);
 
-          responses.put(limitKey, transaction.incrBy(redisKey, request.getCost()));
-          // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
-          // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
-          transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
-          transaction.exec();
-        }
+        responses.put(limitKey, pipeline.incrBy(redisKey, request.getCost()));
+        // We set the expire to twice the expiration period. The expiration is there to ensure that we don't fill the Redis cluster with
+        // useless keys. The actual expiration mechanism is handled by the bucketing mechanism.
+        pipeline.expire(redisKey, request.getExpiration().getSeconds() * 2);
       }
+
+      pipeline.sync();
     } catch (Throwable e) {
       logger.error("An exception occurred while publishing limits to Redis.", e);
     }
@@ -134,37 +122,26 @@ public class RedisStorage implements LimitUsageStorage {
   public Map<LimitKey, Integer> addAndGetWithLimit(Collection<AddAndGetRequest> requests) {
     Map<LimitKey, Response<Object>> responses = new LinkedHashMap<>();
 
-    try (Pipeline pipeline = redisClient.pipelined()) {
-      AbstractTransaction transaction = redisClient.multi();
+    // The counter script is already atomic, so no transaction is required and all the
+    // requests can be pipelined together.
+    try (AbstractPipeline pipeline = redisClient.pipelined()) {
+      for (AddAndGetRequest request : requests) {
+        LimitKey limitKey = LimitKey.fromRequest(request);
+        String redisKey = buildKey(limitKey);
 
-      requests.forEach(
-          request -> {
-            LimitKey limitKey = LimitKey.fromRequest(request);
-            String redisKey =
-                Stream.of(
-                        keyPrefix,
-                        limitKey.getResource(),
-                        limitKey.getLimitName(),
-                        limitKey.getProperty(),
-                        limitKey.getBucket().toString(),
-                        limitKey.getExpiration().toString())
-                    .map(RedisStorage::clean)
-                    .collect(Collectors.joining(KEY_SEPARATOR));
-
-            responses.put(
-                limitKey,
-                transaction.eval(
-                    COUNTER_SCRIPT,
-                    Collections.singletonList(redisKey),
-                    Arrays.asList(
-                        String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
-            transaction.expire(redisKey, request.getExpiration().getSeconds() * 2);
-            transaction.exec();
-          });
+        responses.put(
+            limitKey,
+            pipeline.eval(
+                COUNTER_SCRIPT,
+                Collections.singletonList(redisKey),
+                Arrays.asList(
+                    String.valueOf(request.getCost()), String.valueOf(request.getLimit()))));
+        pipeline.expire(redisKey, request.getExpiration().getSeconds() * 2);
+      }
 
       pipeline.sync();
     } catch (Throwable e) {
-      logger.error("An exception occured while publishing limits to Redis.", e);
+      logger.error("An exception occurred while publishing limits to Redis.", e);
     }
 
     return responses
@@ -226,9 +203,22 @@ public class RedisStorage implements LimitUsageStorage {
     return Collections.unmodifiableMap(counters);
   }
 
+  /**
+   * Closes the underlying {@link UnifiedJedis} client, which is therefore not usable anymore.
+   */
   @Override
   public void close() {
     redisClient.close();
+  }
+
+  private String buildKey(LimitKey limitKey) {
+    return buildKeyPattern(
+        keyPrefix,
+        limitKey.getResource(),
+        limitKey.getLimitName(),
+        limitKey.getProperty(),
+        limitKey.getBucket().toString(),
+        limitKey.getExpiration().toString());
   }
 
   private String buildKeyPattern(String... keyComponents) {

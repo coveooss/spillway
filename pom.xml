@@ -72,7 +72,7 @@
 
         <commons-lang3.version>3.20.0</commons-lang3.version>
 
-        <jedis.version>7.2.0</jedis.version>
+        <jedis.version>7.5.3</jedis.version>
 
         <mockito.version>5.23.0</mockito.version>
 
