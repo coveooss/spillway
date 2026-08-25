@@ -27,8 +27,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -37,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import com.coveo.spillway.limit.LimitKey;
 import com.coveo.spillway.storage.utils.AddAndGetRequest;
+import com.coveo.spillway.storage.utils.MonitoredSingleThreadExecutorService;
+import com.coveo.spillway.storage.utils.MonitoredSingleThreadExecutorService.Metrics;
 import com.coveo.spillway.storage.utils.OverrideKeyRequest;
 
 /**
@@ -57,13 +57,22 @@ public class AsyncLimitUsageStorage implements LimitUsageStorage {
   private static final Logger logger = LoggerFactory.getLogger(AsyncLimitUsageStorage.class);
 
   private final LimitUsageStorage wrappedLimitUsageStorage;
-  private final ExecutorService executorService;
+  private final MonitoredSingleThreadExecutorService executorService;
   private InMemoryStorage cache;
 
   public AsyncLimitUsageStorage(LimitUsageStorage wrappedLimitUsageStorage) {
     this.wrappedLimitUsageStorage = wrappedLimitUsageStorage;
-    this.executorService = Executors.newSingleThreadExecutor();
+    this.executorService = new MonitoredSingleThreadExecutorService();
     this.cache = new InMemoryStorage();
+  }
+
+  /**
+   * Returns a snapshot of the asynchronous worker metrics.
+   *
+   * @return The current worker metrics
+   */
+  public Metrics getMetrics() {
+    return executorService.getMetrics();
   }
 
   @Override
