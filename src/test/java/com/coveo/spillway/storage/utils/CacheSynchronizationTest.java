@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,7 @@ public class CacheSynchronizationTest {
   private static final Duration EXPIRATION = Duration.ofDays(1);
   private static final Instant BUCKET = Instant.now();
   private static final Integer COST = 1;
+  private static final Integer TOTAL = 42;
 
   @Mock private InMemoryStorage inMemoryStorageMock;
   @Mock private LimitUsageStorage limitUsageStorageMock;
@@ -64,7 +66,8 @@ public class CacheSynchronizationTest {
 
   @Test
   public void testRun() {
-    givenInMemoryCacheHasValues(givenCounters());
+    Map<LimitKey, Capacity> capacities = givenInMemoryCacheHasValues(givenCounters());
+    givenLimitUsageStorageReturnsTotal(TOTAL);
 
     cacheSynchronization.run();
 
@@ -78,6 +81,12 @@ public class CacheSynchronizationTest {
     assertThat(addAndGetRequest.getExpiration()).isEqualTo(EXPIRATION);
     assertThat(addAndGetRequest.getEventTimestamp()).isEqualTo(BUCKET);
     assertThat(addAndGetRequest.getCost()).isEqualTo(COST);
+
+    // The synchronized delta is handed over to the storage, so it is subtracted from the cache
+    // and replaced by the total the storage came back with.
+    Capacity capacity = capacities.values().iterator().next();
+    assertThat(capacity.getDelta()).isEqualTo(0);
+    assertThat(capacity.get()).isEqualTo(TOTAL);
   }
 
   private Map<LimitKey, Integer> givenCounters() {
@@ -88,26 +97,32 @@ public class CacheSynchronizationTest {
     when(limitUsageStorageMock.getCurrentLimitCounters()).thenReturn(counters);
   }
 
+  private void givenLimitUsageStorageReturnsTotal(int total) {
+    when(limitUsageStorageMock.addAndGet(any(AddAndGetRequest.class)))
+        .thenAnswer(invocation -> Pair.of(LimitKey.fromRequest(invocation.getArgument(0)), total));
+  }
+
   @SuppressWarnings("cast")
-  private void givenInMemoryCacheHasValues(Map<LimitKey, Integer> counters) {
+  private Map<LimitKey, Capacity> givenInMemoryCacheHasValues(Map<LimitKey, Integer> counters) {
+    Map<LimitKey, Capacity> capacities =
+        counters
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    Entry::getKey,
+                    entry -> {
+                      Capacity capacity = new Capacity();
+                      capacity.addAndGet(entry.getValue());
+
+                      return capacity;
+                    }));
+
     doAnswer(
             invocation -> {
               Consumer<Entry<LimitKey, Capacity>> consumer = invocation.getArgument(0);
 
-              for (Entry<LimitKey, Capacity> entry :
-                  counters
-                      .entrySet()
-                      .stream()
-                      .collect(
-                          Collectors.toMap(
-                              Entry::getKey,
-                              entry -> {
-                                Capacity capacity = new Capacity();
-                                capacity.addAndGet(entry.getValue());
-
-                                return capacity;
-                              }))
-                      .entrySet()) {
+              for (Entry<LimitKey, Capacity> entry : capacities.entrySet()) {
                 consumer.accept(entry);
               }
 
@@ -115,5 +130,7 @@ public class CacheSynchronizationTest {
             })
         .when(inMemoryStorageMock)
         .applyOnEach(any(Consumer.class));
+
+    return capacities;
   }
 }

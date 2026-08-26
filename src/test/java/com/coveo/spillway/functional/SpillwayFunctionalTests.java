@@ -38,7 +38,6 @@ import com.google.common.collect.Range;
 
 import redis.clients.jedis.RedisClient;
 
-@Disabled("Functional tests, remove ignore to run them")
 @Testcontainers
 public class SpillwayFunctionalTests {
 
@@ -51,6 +50,7 @@ public class SpillwayFunctionalTests {
   private static final int ONE_MILLION = 1000000;
   private static final double MARGIN_OF_ERROR = 0.00001;
   private static final String AN_IP = "127.0.0.1";
+  private static final String BENCHMARK = "Performance benchmark, remove ignore to run it";
 
   private SpillwayFactory inMemoryFactory;
 
@@ -75,6 +75,7 @@ public class SpillwayFunctionalTests {
   }
 
   @Test
+  @Disabled(BENCHMARK)
   public void oneMillionConcurrentRequestsWith100Threads() throws Exception {
     Limit<String> ipLimit =
         LimitBuilder.of("perIp").to(ONE_MILLION).per(Duration.ofHours(1)).build();
@@ -115,6 +116,7 @@ public class SpillwayFunctionalTests {
   }
 
   @Test
+  @Disabled(BENCHMARK)
   public void syncPerformanceTryCallAndTryUpdateAndVerifyLimit() {
     int numberOfCalls = ONE_MILLION;
 
@@ -170,6 +172,7 @@ public class SpillwayFunctionalTests {
   }
 
   @Test
+  @Disabled(BENCHMARK)
   public void syncPerformance() {
     int numberOfCalls = 1000000;
     Pair<LimitKey, Integer> lastResponse = null;
@@ -190,6 +193,7 @@ public class SpillwayFunctionalTests {
   }
 
   @Test
+  @Disabled(BENCHMARK)
   public void asyncPerformance() throws Exception {
     AsyncLimitUsageStorage asyncStorage = new AsyncLimitUsageStorage(storage);
     int numberOfCalls = 1000000;
@@ -213,6 +217,8 @@ public class SpillwayFunctionalTests {
   }
 
   @Test
+  @Disabled(
+      "Races with the synchronization timer: it sleeps for exactly the synchronization period")
   public void asyncBatchStorageTest() throws Exception {
     AsyncBatchLimitUsageStorage asyncStorage =
         new AsyncBatchLimitUsageStorage(storage, Duration.ofSeconds(5));

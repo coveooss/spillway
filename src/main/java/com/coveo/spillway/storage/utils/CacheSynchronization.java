@@ -93,9 +93,9 @@ public class CacheSynchronization extends TimerTask {
             .withCost(cost)
             .build();
 
-    Pair<LimitKey, Integer> reponse = storage.addAndGet(request);
+    Pair<LimitKey, Integer> response = storage.addAndGet(request);
 
     entry.getValue().substractAndGet(cost);
-    entry.getValue().setTotal(reponse.getValue());
+    entry.getValue().setTotal(response.getValue());
   }
 }

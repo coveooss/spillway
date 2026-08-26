@@ -50,6 +50,12 @@ public class AsyncBatchLimitUsageStorageTest {
   public void setup() {
     cacheSpy = Mockito.spy(new InMemoryStorage());
     cacheSynchronizationSpy = Mockito.spy(new CacheSynchronization(cacheSpy, storageMock));
+    // The synchronization timer fires while these tests run. Without a return value the
+    // synchronization fails with a NPE that is only ever surfaced as a log warning.
+    lenient()
+        .when(storageMock.addAndGet(any(AddAndGetRequest.class)))
+        .thenAnswer(
+            invocation -> ImmutablePair.of(LimitKey.fromRequest(invocation.getArgument(0)), 100));
   }
 
   @AfterEach
